@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KatukRenderer", "KatukRenderer\KatukRenderer.vcxproj", "{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QuadBezLib", "QuadBezLib\QuadBezLib.vcxproj", "{0C664345-A15E-48F6-9500-9DDB868BDA27}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM = Debug|ARM
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|ARM = Release|ARM
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Debug|ARM.ActiveCfg = Debug|Win32
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Debug|Win32.Build.0 = Debug|Win32
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Debug|x64.ActiveCfg = Debug|x64
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Debug|x64.Build.0 = Debug|x64
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Release|ARM.ActiveCfg = Release|Win32
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Release|Win32.ActiveCfg = Release|Win32
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Release|Win32.Build.0 = Release|Win32
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Release|x64.ActiveCfg = Release|x64
+		{2C810269-6EB9-4EF2-AE47-91B41BA69EEC}.Release|x64.Build.0 = Release|x64
+		{0C664345-A15E-48F6-9500-9DDB868BDA27}.Debug|ARM.ActiveCfg = Debug|Win32
+		{0C664345-A15E-48F6-9500-9DDB868BDA27}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{0C664345-A15E-48F6-9500-9DDB868BDA27}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{0C664345-A15E-48F6-9500-9DDB868BDA27}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0C664345-A15E-48F6-9500-9DDB868BDA27}.Debug|Win32.Build.0 = Debug|Win32
+		{0C664345-A15E-48F6-9500-9DDB868BDA27}.Debug|x64.ActiveCfg = Debug|x64
+		{0C664345-A15E-48F6-9500-9DDB868BDA27}.Release|ARM.ActiveCfg = Release|Win32
+		{0C664345-A15E-48F6-9500-9DDB868BDA27}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{0C664345-A15E-48F6-9500-9DDB868BDA27}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{0C664345-A15E-48F6-9500-9DDB868BDA27}.Release|Win32.ActiveCfg = Release|Win32
+		{0C664345-A15E-48F6-9500-9DDB868BDA27}.Release|Win32.Build.0 = Release|Win32
+		{0C664345-A15E-48F6-9500-9DDB868BDA27}.Release|x64.ActiveCfg = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
