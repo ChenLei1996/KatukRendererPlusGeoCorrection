@@ -1,0 +1,156 @@
+void DVO::detectFeatures( cv::Mat &features, cv::Mat &Src, int valThresholdFastFeature )
+{
+    xy* corners = NULL;
+    int* scores = NULL;
+    int num_corners;
+    byte* im;
+    byte* ptr;
+    
+    im = (byte*) malloc( ImSizeX * ImSizeY * sizeof(byte) );
+	ptr = im;
+	for( int i=0 ; i<ImSizeY ; i++ )
+		for( int j=0 ; j<ImSizeX ; j++ )
+			*ptr++ = Src.at<uchar>(i,j);
+    
+    corners = fast9_detect(im,ImSizeX,ImSizeY,ImSizeX,valThresholdFastFeature,&num_corners);
+	scores = fast9_score(im,ImSizeX,corners,num_corners,valThresholdFastFeature);
+    free(im);
+    
+    // Non-maximum suppresion
+    int* labelmap = (int*)malloc(sizeof(int)*ImSizeX*ImSizeY);
+    memset(labelmap,-1,sizeof(int)*ImSizeX*ImSizeY);
+    
+    for(int i = 0; i < num_corners; i++)
+        labelmap[corners[i].x + corners[i].y * ImSizeX] = i;
+    
+    bool* flag = (bool*)malloc(sizeof(bool)*num_corners);
+    memset(flag,0,sizeof(bool)*num_corners);
+
+    int n = ValueNonMaxSuppresion;
+    int id;
+    int num_success = 0;
+    for(int i = n; i < ImSizeX-2*n; i = i+n+1) {
+        for(int j = n; j < ImSizeY-2*n; j = j+n+1) {
+            xy bc;
+            int cost = -1;
+            int fid = -1;
+            for(int i2 = i; i2 <= i+n; i2++) {
+                for(int j2 = j; j2 <= j+n; j2++) {
+                    id = labelmap[i2+j2*ImSizeX];
+                    if(id > -1) {
+                        if(scores[id] > cost) {
+                            bc = corners[id];
+                            cost = scores[id];
+                            fid = id;
+            }}}}
+            
+            if( cost > -1 ) {
+                bool fail = false;
+                
+                // 1
+                for(int i2 = bc.x-n; i2 < i; i2++) {
+                    for(int j2 = bc.y-n; j2 <= bc.y+n; j2++) {
+                        id = labelmap[i2+j2*ImSizeX];
+                        if(id > -1) {
+                            if(scores[id] > cost) {
+                                fail = true;
+                                break;
+                    }}}
+                    if(fail)
+                        break;
+                }
+                //2
+                if(!fail) {
+                    for(int i2 = i; i2 <= i+n; i2++) {
+                        for(int j2 = bc.y-n; j2 < j; j2++) {
+                            id = labelmap[i2+j2*ImSizeX];
+                            if(id > -1) {
+                                if(scores[id] > cost) {
+                                    fail = true;
+                                    break;
+                        }}}
+                        if(fail)
+                            break;
+                }}
+                //3
+                if(!fail) {
+                    for(int i2 = i; i2 <= i+n; i2++) {
+                        for(int j2 = j+n+1; j2 <= bc.y+n; j2++) {
+                            id = labelmap[i2+j2*ImSizeX];
+                            if(id > -1) {
+                                if(scores[id] > cost) {
+                                    fail = true;
+                                    break;
+                        }}}
+                        if(fail)
+                            break;
+                }}
+                //4
+                if(!fail) {
+                    for(int i2 = i+n+1; i2 <= bc.x+n; i2++) {
+                        for(int j2 = bc.y-n; j2 <= bc.y+n; j2++) {
+                            id = labelmap[i2+j2*ImSizeX];
+                            if(id > -1) {
+                                if(scores[id] > cost) {
+                                    fail = true;
+                                    break;
+                        }}}
+                        if(fail)
+                            break;
+                }}
+                // results
+                if(!fail)
+                {
+                    flag[fid] = true;
+                    num_success++;
+                }          
+            }
+        }
+    }
+    
+    n = num_success;
+
+	int* idx = (int*)malloc(n*sizeof(int));
+	int NumFeatures = 0;
+
+	for(int i = 0; i < num_corners; i++) {
+        if(flag[i]) {            
+            if(corners[i].x >= CSMarginLeft[0]) {
+                if(corners[i].x <= CSMarginRight[0]) {
+                    if(corners[i].y >= CSMarginTop[0]) {
+                        if(corners[i].y <= CSMarginBottom[0]) {
+                            idx[NumFeatures] = i;
+                            NumFeatures++;
+	}}}}}}
+
+	if(ValueMaxNumFeatures == 0 || ValueMaxNumFeatures >= NumFeatures)
+	{
+		features.create(2,NumFeatures,CV_64F);
+
+		for(int i = 0 ; i < NumFeatures ; i++)
+		{
+			features.at<double>(0,i) = (double) corners[idx[i]].x;
+			features.at<double>(1,i) = (double) corners[idx[i]].y;
+		}
+	}
+	else
+	{
+		int* Ids = (int*)malloc(sizeof(int)*NumFeatures);
+		generateSamples( Ids, ValueMaxNumFeatures, NumFeatures );
+
+		features.create(2,ValueMaxNumFeatures,CV_64F);
+
+		for(int i = 0 ; i < ValueMaxNumFeatures ; i++)
+		{
+			features.at<double>(0,i) = (double) corners[idx[Ids[i]]].x;
+			features.at<double>(1,i) = (double) corners[idx[Ids[i]]].y;
+		}
+		free(Ids);
+	}
+
+	free(idx);
+    free(corners);
+    free(scores);
+    free(labelmap);
+    free(flag);
+}
