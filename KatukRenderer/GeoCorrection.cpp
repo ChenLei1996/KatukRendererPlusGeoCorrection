@@ -56,6 +56,16 @@ cv::Point2f _texGrids[] = {
 	cv::Point2f(0, 399), cv::Point2f(49, 399), cv::Point2f(99, 399), cv::Point2f(151, 399), cv::Point2f(199, 399), cv::Point2f(247, 399), cv::Point2f(298, 399), cv::Point2f(349, 399), cv::Point2f(399, 399)
 };
 
+cv::Point2f _trfReference[] = {
+	//cv::Point2f(198, 218), cv::Point2f(508, 183), cv::Point2f(174, 532), cv::Point2f(514, 545)
+	cv::Point2f(0, 0), cv::Point2f(310, -35), cv::Point2f(-24, 314), cv::Point2f(316, 327)
+};
+
+cv::Point2f _squareReference[] = {
+	//cv::Point2f(198, 218), cv::Point2f(508, 218), cv::Point2f(198, 532), cv::Point2f(508, 532)
+	cv::Point2f(0, 0), cv::Point2f(310, 0), cv::Point2f(0, 314), cv::Point2f(310, 314)
+};
+
 GLuint tex;
 
 GeoCorrection::GeoCorrection(const cv::Mat _grid, const cv::Mat _rtImage, int _lv)
@@ -118,7 +128,7 @@ void GeoCorrection::runCorrection(int level)
 	camcorners.push_back(rtDetects[row*row - 1]);
 	camcorners.push_back(rtDetects[row*(row - 1)]);;
 	/*cv::Mat H = cv::findHomography(projcorners, camcorners, 0);*/
-	cv::Mat H = cv::findHomography(gridDetects, rtDetects, 0);
+	cv::Mat H = cv::findHomography(projcorners, camcorners, 0);
 	std::cout << H << std::endl;
 	
 	// apply homography to move camera points to projector space
@@ -135,8 +145,28 @@ void GeoCorrection::runCorrection(int level)
 		toProjector.push_back(tmp);
 	}
 	/* debug */
-	for (unsigned int i = 0; i < toProjector.size(); i++)
-		std::cout << toProjector[i] << std::endl;
+	/*for (unsigned int i = 0; i < toProjector.size(); i++)
+		std::cout << toProjector[i] << std::endl;*/
+	int rootIdx[9];
+	rootIdx[0] = 0;
+	rootIdx[2] = row - 1;
+	rootIdx[8] = row*row - 1;
+	rootIdx[6] = row*(row - 1);
+	rootIdx[1] = (rootIdx[0] + rootIdx[2]) / 2;
+	rootIdx[7] = (rootIdx[6] + rootIdx[8]) / 2;
+	rootIdx[3] = (rootIdx[0] + rootIdx[6]) / 2;
+	rootIdx[5] = (rootIdx[2] + rootIdx[8]) / 2;
+	rootIdx[4] = (rootIdx[3] + rootIdx[5]) / 2;
+	std::cout << toProjector[rootIdx[0]] << std::endl;
+	std::cout << toProjector[rootIdx[1]] << std::endl;
+	std::cout << toProjector[rootIdx[2]] << std::endl;
+	std::cout << toProjector[rootIdx[3]] << std::endl;
+	std::cout << toProjector[rootIdx[4]] << std::endl;
+	std::cout << toProjector[rootIdx[5]] << std::endl;
+	std::cout << toProjector[rootIdx[6]] << std::endl;
+	std::cout << toProjector[rootIdx[7]] << std::endl;
+	std::cout << toProjector[rootIdx[8]] << std::endl;
+	
 	
 	genBernsVal(BernsVal, BernCoff, steps);
 	quadBezTree = new BezTree(toProjector, gridDetects, level);
@@ -309,7 +339,7 @@ void GeoCorrection::bezfitDisplay()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(-20, gridX+20, -20, gridX+20, -1, 1);
+	glOrtho(-10, gridX+10, -10, gridX+10, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
@@ -334,7 +364,6 @@ void GeoCorrection::bezfitKeyboard(unsigned char key, int x, int y)
 	case '0':
 		patchDrawLevel = 0;
 		break;
-
 	case '1':
 		patchDrawLevel = 1;
 		break;
@@ -352,10 +381,25 @@ void GeoCorrection::bezfitKeyboard(unsigned char key, int x, int y)
 	case 'p':
 	case 'P':
 		// runCorrection
-		std::cout << " Pass Bezier patch to Ray-tracer" << std::endl;
+		/*std::cout << " Pass Bezier patch to Ray-tracer" << std::endl;
 		passedFromCv.create(cv::Size(gridX,gridY), CV_8UC3);
 		glReadPixels(0, 0, gridX, gridY, GL_BGR, GL_UNSIGNED_BYTE, passedFromCv.data);
-		cv::flip(passedFromCv, passedFromCv, 0);
+		cv::flip(passedFromCv, passedFromCv, 0);*/
+
+		cv::Mat bezPatchMat;
+		std::cout << " Pass Bezier patch to Ray-tracer" << std::endl;
+		bezPatchMat.create(cv::Size(gridX, gridY), CV_8UC3);
+		glReadPixels(0, 0, gridX, gridY, GL_BGR, GL_UNSIGNED_BYTE, bezPatchMat.data);
+		cv::flip(bezPatchMat, bezPatchMat, 0);
+		cv::imshow("before warping", bezPatchMat);
+		// _trfReference, _squareReference
+		cv::Mat lastTransform = cv::getPerspectiveTransform(_squareReference, _trfReference);
+		std::cout << lastTransform << std::endl;
+		double LenW = static_cast<double>(_squareReference[1].x - _squareReference[0].x);
+		double LenH = static_cast<double>(_squareReference[2].y - _squareReference[0].y);
+		//cv::Mat scale = (cv::Mat_<double>(3, 3) << 1.2, 0, 0, 0, 1.2, 0, 0, 0, 1);
+		//lastTransform = scale * lastTransform;
+		cv::warpPerspective(bezPatchMat, passedFromCv, lastTransform, cv::Size(gridX, gridY), CV_WARP_INVERSE_MAP);
 		cv::imshow("passedFromCV", passedFromCv);
 		break;
 	}

@@ -15,6 +15,9 @@
 #define INV_PI     0.31830988618379067154f
 #define INV_TWOPI  0.15915494309189533577f
 #define INV_FOURPI 0.07957747154594766788f
+#ifndef isnan(x)
+#define isnan(x) _isnan(x)
+#endif
 
 const float FLOAT_INFINITY = std::numeric_limits<float>::infinity();
 extern const int WINX, WINY;

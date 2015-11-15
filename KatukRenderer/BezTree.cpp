@@ -54,6 +54,11 @@ void BezTree::draw(int lv)
 		{
 			p = p->child[i];
 		}
+		if (p->child[i] == NULL)
+		{
+			std::cerr << "Subdivision is not operated yet, run subdivision first" << std::endl;
+			return;
+		}
 		p->child[0]->draw();
 		p->child[1]->draw();
 		p->child[2]->draw();
@@ -77,7 +82,18 @@ void BezTreeNode::subdivide()
 		float u_mid = 0.5f*(u_s + u_e);
 		float v_mid = 0.5f*(v_s + v_e);
 		// child[0]
-		id0[0] = idx[3];
+		id0[0] = idx[0];
+		id0[2] = idx[1];
+		id0[6] = idx[3];
+		id0[8] = idx[4];
+		id0[1] = static_cast<int>((id0[0] + id0[2]) / 2.0);
+		id0[7] = static_cast<int>((id0[6] + id0[8]) / 2.0);
+		id0[3] = static_cast<int>((id0[0] + id0[6]) / 2.0);
+		id0[5] = static_cast<int>((id0[2] + id0[8]) / 2.0);
+		id0[4] = static_cast<int>((id0[3] + id0[5]) / 2.0);
+		child[0] = new BezTreeNode(childlv, u_s, u_mid, v_s, v_mid,
+			tree, this, id0);
+		/*id0[0] = idx[3];
 		id0[2] = idx[4];
 		id0[6] = idx[6];
 		id0[8] = idx[7];
@@ -87,14 +103,14 @@ void BezTreeNode::subdivide()
 		id0[5] = static_cast<int>((id0[2] + id0[8]) / 2.0);
 		id0[4] = static_cast<int>((id0[3] + id0[5]) / 2.0);
 		child[0] = new BezTreeNode(childlv, u_s, u_mid, v_s, v_mid,
-			tree, this, id0);
+			tree, this, id0);*/
 		
 
 		// child[1]
-		id1[0] = idx[4];
-		id1[2] = idx[5];
-		id1[6] = idx[7];
-		id1[8] = idx[8];
+		id1[0] = idx[1];
+		id1[2] = idx[2];
+		id1[6] = idx[4];
+		id1[8] = idx[5];
 		id1[1] = static_cast<int>((id1[0] + id1[2]) / 2.0);
 		id1[7] = static_cast<int>((id1[6] + id1[8]) / 2.0);
 		id1[3] = static_cast<int>((id1[0] + id1[6]) / 2.0);
@@ -104,10 +120,10 @@ void BezTreeNode::subdivide()
 			tree, this, id1);
 
 		// child[2] right bottom
-		id2[0] = idx[1];
-		id2[2] = idx[2];
-		id2[6] = idx[4];
-		id2[8] = idx[5];
+		id2[0] = idx[4];
+		id2[2] = idx[5];
+		id2[6] = idx[7];
+		id2[8] = idx[8];
 		id2[1] = static_cast<int>((id2[0] + id2[2]) / 2.0);
 		id2[7] = static_cast<int>((id2[6] + id2[8]) / 2.0);
 		id2[3] = static_cast<int>((id2[0] + id2[6]) / 2.0);
@@ -117,10 +133,10 @@ void BezTreeNode::subdivide()
 			tree, this, id2);
 
 		// child[3] left bottom
-		id3[0] = idx[0];
-		id3[2] = idx[1];
-		id3[6] = idx[3];
-		id3[8] = idx[4];
+		id3[0] = idx[3];
+		id3[2] = idx[4];
+		id3[6] = idx[6];
+		id3[8] = idx[7];
 		id3[1] = static_cast<int>((id3[0] + id3[2]) / 2.0);
 		id3[7] = static_cast<int>((id3[6] + id3[8]) / 2.0);
 		id3[3] = static_cast<int>((id3[0] + id3[6]) / 2.0);
@@ -154,26 +170,35 @@ BezTreeNode::BezTreeNode(int _lv, float us, float ue, float vs, float ve,
 	memcpy(idx, _idx, sizeof(int) * 9);
 
 	// compute bezier control points
-	Vector2f p00(tree->transformedPoints[idx[6]].at<double>(0, 0), tree->transformedPoints[idx[6]].at<double>(1, 0)),
-		p02(tree->transformedPoints[idx[8]].at<double>(0, 0), tree->transformedPoints[idx[8]].at<double>(1, 0)),
-		p01 = estimateControlPoint(p00, p02, cv::Point2f(tree->transformedPoints[idx[7]].at<double>(0, 0), tree->transformedPoints[idx[7]].at<double>(1, 0)), 0.5),
-		p20(tree->transformedPoints[idx[0]].at<double>(0,0), tree->transformedPoints[idx[0]].at<double>(1,0)),
-		p22(tree->transformedPoints[idx[2]].at<double>(0,0), tree->transformedPoints[idx[2]].at<double>(1,0)),
-		p21 = estimateControlPoint(p20, p22, cv::Point2f(tree->transformedPoints[idx[1]].at<double>(0,0), tree->transformedPoints[idx[1]].at<double>(1,0)), 0.5),
-		p10 = estimateControlPoint(p00, p20, cv::Point2f(tree->transformedPoints[idx[3]].at<double>(0,0), tree->transformedPoints[idx[3]].at<double>(1,0)), 0.5),
-		p12 = estimateControlPoint(p02, p22, cv::Point2f(tree->transformedPoints[idx[5]].at<double>(0,0), tree->transformedPoints[idx[5]].at<double>(1,0)), 0.5),
-		p11 = estimateControlPoint(p10, p12, cv::Point2f(tree->transformedPoints[idx[4]].at<double>(0,0), tree->transformedPoints[idx[4]].at<double>(1,0)), 0.5);
+	Vector2f p00(tree->transformedPoints[idx[0]].at<double>(0, 0), 399.0-tree->transformedPoints[idx[0]].at<double>(1, 0)),
+		p02(tree->transformedPoints[idx[2]].at<double>(0, 0), 399.0-tree->transformedPoints[idx[2]].at<double>(1, 0)),
+		p01 = estimateControlPoint(p00, p02, cv::Point2f(tree->transformedPoints[idx[1]].at<double>(0, 0), 399.0-tree->transformedPoints[idx[1]].at<double>(1, 0)), 0.5),
+		p20(tree->transformedPoints[idx[6]].at<double>(0, 0), 399.0-tree->transformedPoints[idx[6]].at<double>(1, 0)),
+		p22(tree->transformedPoints[idx[8]].at<double>(0, 0), 399.0-tree->transformedPoints[idx[8]].at<double>(1, 0)),
+		p21 = estimateControlPoint(p20, p22, cv::Point2f(tree->transformedPoints[idx[7]].at<double>(0, 0), 399.0 - tree->transformedPoints[idx[7]].at<double>(1, 0)), 0.5),
+		p10 = estimateControlPoint(p00, p20, cv::Point2f(tree->transformedPoints[idx[3]].at<double>(0, 0), 399.0 - tree->transformedPoints[idx[3]].at<double>(1, 0)), 0.5),
+		p12 = estimateControlPoint(p02, p22, cv::Point2f(tree->transformedPoints[idx[5]].at<double>(0, 0), 399.0 - tree->transformedPoints[idx[5]].at<double>(1, 0)), 0.5),
+		p11 = estimateControlPoint(p10, p12, cv::Point2f(tree->transformedPoints[idx[4]].at<double>(0, 0), 399.0 - tree->transformedPoints[idx[4]].at<double>(1, 0)), 0.5);
 
+	Vector2f glProjPoint0(tree->projPoints[idx[0]].x, 399.0 - tree->projPoints[idx[0]].y),
+		glProjPoint1(tree->projPoints[idx[1]].x, 399.0 - tree->projPoints[idx[1]].y),
+		glProjPoint2(tree->projPoints[idx[2]].x, 399.0 - tree->projPoints[idx[2]].y),
+		glProjPoint3(tree->projPoints[idx[3]].x, 399.0 - tree->projPoints[idx[3]].y),
+		glProjPoint4(tree->projPoints[idx[4]].x, 399.0 - tree->projPoints[idx[4]].y),
+		glProjPoint5(tree->projPoints[idx[5]].x, 399.0 - tree->projPoints[idx[5]].y),
+		glProjPoint6(tree->projPoints[idx[6]].x, 399.0 - tree->projPoints[idx[6]].y),
+		glProjPoint7(tree->projPoints[idx[7]].x, 399.0 - tree->projPoints[idx[7]].y),
+		glProjPoint8(tree->projPoints[idx[8]].x, 399.0 - tree->projPoints[idx[8]].y);
 	// actual bezier control points, need to differntiate delta
-	surface = new QuadBezierPatch2f(2.0f*tree->projPoints[idx[6]] - p00,
-		2.0f*tree->projPoints[idx[7]] - p01,
-		2.0f*tree->projPoints[idx[8]] - p02,
-		2.0f*tree->projPoints[idx[3]] - p10,
-		2.0f*tree->projPoints[idx[4]] - p11,
-		2.0f*tree->projPoints[idx[5]] - p12,
-		2.0f*tree->projPoints[idx[0]] - p20,
-		2.0f*tree->projPoints[idx[1]] - p21,
-		2.0f*tree->projPoints[idx[2]] - p22
+	surface = new QuadBezierPatch2f(2.0f*glProjPoint0 - p00,
+		2.0f*glProjPoint1 - p01,
+		2.0f*glProjPoint2 - p02,
+		2.0f*glProjPoint3 - p10,
+		2.0f*glProjPoint4 - p11,
+		2.0f*glProjPoint5 - p12,
+		2.0f*glProjPoint6 - p20,
+		2.0f*glProjPoint7 - p21,
+		2.0f*glProjPoint8 - p22
 		);
 
 	// generate vertices and mesh indices

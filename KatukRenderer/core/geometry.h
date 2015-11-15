@@ -308,12 +308,12 @@ public:
     // RayDifferential Public Methods
     RayDifferential() { hasDifferentials = false; }
     RayDifferential(const Point &org, const Vector &dir, float start,
-        float end = INFINITY, float t = 0.f, int d = 0)
+        float end = FLOAT_INFINITY, float t = 0.f, int d = 0)
             : Ray(org, dir, start, end, t, d) {
         hasDifferentials = false;
     }
     RayDifferential(const Point &org, const Vector &dir, const Ray &parent,
-        float start, float end = INFINITY)
+        float start, float end = FLOAT_INFINITY)
             : Ray(org, dir, start, end, parent.time, parent.depth+1) {
         hasDifferentials = false;
     }

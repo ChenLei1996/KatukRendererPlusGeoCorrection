@@ -10,6 +10,21 @@ public:
 	float x, y;
 };
 
+inline Vector2f operator*(float m, const Vector2f& rhs)
+{
+	return Vector2f(m*rhs.x, m*rhs.y);
+}
+
+inline Vector2f operator-(const Vector2f& lhs, const Vector2f& rhs)
+{
+	return Vector2f(lhs.x - rhs.x, lhs.y - rhs.y);
+}
+
+inline Vector2f operator+(const Vector2f& lhs, const Vector2f& rhs)
+{
+	return Vector2f(lhs.x + rhs.x, lhs.y + rhs.y);
+}
+
 class Vector3f
 {
 public:
