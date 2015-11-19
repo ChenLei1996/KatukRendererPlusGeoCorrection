@@ -24,7 +24,7 @@ private:
 	static void bezfitKeyboard(unsigned char key, int x, int y);
 
 	void findGrids(Geotype type, int level);
-	void sort(cv::Mat& arr);
+	void sort(cv::Mat& arr, int level);
 
 	cv::Mat grid, rtImage;
 	int subdivLv;

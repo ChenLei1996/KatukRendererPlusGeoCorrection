@@ -1,5 +1,7 @@
 #include <GL/freeglut.h>
+#include <opencv2/core.hpp>
 #include "../QuadBezLib/QuadBezier.h"
+#include "GeoCorrection.h"
 #include "BezTree.h"
 #include <vector>
 #include <iostream>
@@ -93,19 +95,7 @@ void BezTreeNode::subdivide()
 		id0[4] = static_cast<int>((id0[3] + id0[5]) / 2.0);
 		child[0] = new BezTreeNode(childlv, u_s, u_mid, v_s, v_mid,
 			tree, this, id0);
-		/*id0[0] = idx[3];
-		id0[2] = idx[4];
-		id0[6] = idx[6];
-		id0[8] = idx[7];
-		id0[1] = static_cast<int>((id0[0] + id0[2]) / 2.0);
-		id0[7] = static_cast<int>((id0[6] + id0[8]) / 2.0);
-		id0[3] = static_cast<int>((id0[0] + id0[6]) / 2.0);
-		id0[5] = static_cast<int>((id0[2] + id0[8]) / 2.0);
-		id0[4] = static_cast<int>((id0[3] + id0[5]) / 2.0);
-		child[0] = new BezTreeNode(childlv, u_s, u_mid, v_s, v_mid,
-			tree, this, id0);*/
-		
-
+	
 		// child[1]
 		id1[0] = idx[1];
 		id1[2] = idx[2];
@@ -169,26 +159,27 @@ BezTreeNode::BezTreeNode(int _lv, float us, float ue, float vs, float ve,
 	child[0] = child[1] = child[2] = child[3] = NULL;
 	memcpy(idx, _idx, sizeof(int) * 9);
 
+	const double Height = static_cast<double>(GeoCorrection::gridY) - 1;
 	// compute bezier control points
-	Vector2f p00(tree->transformedPoints[idx[0]].at<double>(0, 0), 399.0-tree->transformedPoints[idx[0]].at<double>(1, 0)),
-		p02(tree->transformedPoints[idx[2]].at<double>(0, 0), 399.0-tree->transformedPoints[idx[2]].at<double>(1, 0)),
-		p01 = estimateControlPoint(p00, p02, cv::Point2f(tree->transformedPoints[idx[1]].at<double>(0, 0), 399.0-tree->transformedPoints[idx[1]].at<double>(1, 0)), 0.5),
-		p20(tree->transformedPoints[idx[6]].at<double>(0, 0), 399.0-tree->transformedPoints[idx[6]].at<double>(1, 0)),
-		p22(tree->transformedPoints[idx[8]].at<double>(0, 0), 399.0-tree->transformedPoints[idx[8]].at<double>(1, 0)),
-		p21 = estimateControlPoint(p20, p22, cv::Point2f(tree->transformedPoints[idx[7]].at<double>(0, 0), 399.0 - tree->transformedPoints[idx[7]].at<double>(1, 0)), 0.5),
-		p10 = estimateControlPoint(p00, p20, cv::Point2f(tree->transformedPoints[idx[3]].at<double>(0, 0), 399.0 - tree->transformedPoints[idx[3]].at<double>(1, 0)), 0.5),
-		p12 = estimateControlPoint(p02, p22, cv::Point2f(tree->transformedPoints[idx[5]].at<double>(0, 0), 399.0 - tree->transformedPoints[idx[5]].at<double>(1, 0)), 0.5),
-		p11 = estimateControlPoint(p10, p12, cv::Point2f(tree->transformedPoints[idx[4]].at<double>(0, 0), 399.0 - tree->transformedPoints[idx[4]].at<double>(1, 0)), 0.5);
+	Vector2f p00(tree->transformedPoints[idx[0]].at<double>(0, 0), Height-tree->transformedPoints[idx[0]].at<double>(1, 0)),
+		p02(tree->transformedPoints[idx[2]].at<double>(0, 0), Height-tree->transformedPoints[idx[2]].at<double>(1, 0)),
+		p01 = estimateControlPoint(p00, p02, cv::Point2f(tree->transformedPoints[idx[1]].at<double>(0, 0), Height-tree->transformedPoints[idx[1]].at<double>(1, 0)), 0.5),
+		p20(tree->transformedPoints[idx[6]].at<double>(0, 0), Height-tree->transformedPoints[idx[6]].at<double>(1, 0)),
+		p22(tree->transformedPoints[idx[8]].at<double>(0, 0), Height-tree->transformedPoints[idx[8]].at<double>(1, 0)),
+		p21 = estimateControlPoint(p20, p22, cv::Point2f(tree->transformedPoints[idx[7]].at<double>(0, 0), Height - tree->transformedPoints[idx[7]].at<double>(1, 0)), 0.5),
+		p10 = estimateControlPoint(p00, p20, cv::Point2f(tree->transformedPoints[idx[3]].at<double>(0, 0), Height - tree->transformedPoints[idx[3]].at<double>(1, 0)), 0.5),
+		p12 = estimateControlPoint(p02, p22, cv::Point2f(tree->transformedPoints[idx[5]].at<double>(0, 0), Height - tree->transformedPoints[idx[5]].at<double>(1, 0)), 0.5),
+		p11 = estimateControlPoint(p10, p12, cv::Point2f(tree->transformedPoints[idx[4]].at<double>(0, 0), Height - tree->transformedPoints[idx[4]].at<double>(1, 0)), 0.5);
 
-	Vector2f glProjPoint0(tree->projPoints[idx[0]].x, 399.0 - tree->projPoints[idx[0]].y),
-		glProjPoint1(tree->projPoints[idx[1]].x, 399.0 - tree->projPoints[idx[1]].y),
-		glProjPoint2(tree->projPoints[idx[2]].x, 399.0 - tree->projPoints[idx[2]].y),
-		glProjPoint3(tree->projPoints[idx[3]].x, 399.0 - tree->projPoints[idx[3]].y),
-		glProjPoint4(tree->projPoints[idx[4]].x, 399.0 - tree->projPoints[idx[4]].y),
-		glProjPoint5(tree->projPoints[idx[5]].x, 399.0 - tree->projPoints[idx[5]].y),
-		glProjPoint6(tree->projPoints[idx[6]].x, 399.0 - tree->projPoints[idx[6]].y),
-		glProjPoint7(tree->projPoints[idx[7]].x, 399.0 - tree->projPoints[idx[7]].y),
-		glProjPoint8(tree->projPoints[idx[8]].x, 399.0 - tree->projPoints[idx[8]].y);
+	Vector2f glProjPoint0(tree->projPoints[idx[0]].x, Height - tree->projPoints[idx[0]].y),
+		glProjPoint1(tree->projPoints[idx[1]].x, Height - tree->projPoints[idx[1]].y),
+		glProjPoint2(tree->projPoints[idx[2]].x, Height - tree->projPoints[idx[2]].y),
+		glProjPoint3(tree->projPoints[idx[3]].x, Height - tree->projPoints[idx[3]].y),
+		glProjPoint4(tree->projPoints[idx[4]].x, Height - tree->projPoints[idx[4]].y),
+		glProjPoint5(tree->projPoints[idx[5]].x, Height - tree->projPoints[idx[5]].y),
+		glProjPoint6(tree->projPoints[idx[6]].x, Height - tree->projPoints[idx[6]].y),
+		glProjPoint7(tree->projPoints[idx[7]].x, Height - tree->projPoints[idx[7]].y),
+		glProjPoint8(tree->projPoints[idx[8]].x, Height - tree->projPoints[idx[8]].y);
 	// actual bezier control points, need to differntiate delta
 	surface = new QuadBezierPatch2f(2.0f*glProjPoint0 - p00,
 		2.0f*glProjPoint1 - p01,

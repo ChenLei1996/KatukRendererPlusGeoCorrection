@@ -8,8 +8,6 @@
 #include "core/Light.h"
 #include "descriptor.h"
 #include "glheader.h"
-//#include "geocorr/bezfit.h"
-//#include "geocorr/cvMethod.h"
 #include "GeoCorrection.h"
 #include <opencv2/highgui.hpp>
 #include <GL/glew.h>
@@ -107,12 +105,11 @@ void keyboard(unsigned char key, int x, int y)
 		cv::flip(passToCV, passToCV, 0);
 		cv::imshow("passToCV", passToCV);
 		GeoCorrection geoCorrection(*scene->plight->texture, passToCV);
-		/*cv::Mat image = cv::imread("rtImage0.jpg", cv::IMREAD_COLOR);
+		
+		/*cv::Mat image = cv::imread("rendering-checker-lv2.jpg", cv::IMREAD_COLOR);
 		GeoCorrection geoCorrection(*scene->plight->texture, image);*/
 		geoCorrection.runCorrection(2);
 		geoCorrection.initTexWindow();
-
-		//runCVProcedure(passToCv, *scene->plight->texture);
 		break;
 	
 	}
