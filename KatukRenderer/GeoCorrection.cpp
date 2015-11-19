@@ -146,7 +146,7 @@ void GeoCorrection::findGrids(Geotype type, int level)
 	double k = 0.05;*/
 	
 	cv::Mat m_corners;
-	cv::goodFeaturesToTrack(filtered, m_corners, numCorners, 0.01, 15.0, cv::noArray(), 3, true);
+	cv::goodFeaturesToTrack(filtered, m_corners, numCorners, 0.01, 15.0, cv::noArray(), 5);
 	cv::Mat cornerDisplayed;
 	targetImage.copyTo(cornerDisplayed);
 	for (std::size_t i = 0; i < numCorners; i++)
@@ -282,17 +282,17 @@ void GeoCorrection::bezfitKeyboard(unsigned char key, int x, int y)
 		bezPatchMat.create(cv::Size(gridX, gridY), CV_8UC3);
 		glReadPixels(0, 0, gridX, gridY, GL_BGR, GL_UNSIGNED_BYTE, bezPatchMat.data);
 		cv::flip(bezPatchMat, bezPatchMat, 0);
-		//cv::imshow("before warping", bezPatchMat);
-		//// _trfReference, _squareReference
-		//cv::Mat lastTransform = cv::getPerspectiveTransform(_squareReference, _trfReference);
-		//std::cout << lastTransform << std::endl;
+		cv::imshow("before warping", bezPatchMat);
+		// _trfReference, _squareReference
+		cv::Mat lastTransform = cv::getPerspectiveTransform(_squareReference, _trfReference);
+		std::cout << lastTransform << std::endl;
 		//double LenW = static_cast<double>(_squareReference[1].x - _squareReference[0].x);
 		//double LenH = static_cast<double>(_squareReference[2].y - _squareReference[0].y);
-		////cv::Mat scale = (cv::Mat_<double>(3, 3) << 1.2, 0, 0, 0, 1.2, 0, 0, 0, 1);
-		////lastTransform = scale * lastTransform;
-		//cv::warpPerspective(bezPatchMat, passedFromCv, lastTransform, cv::Size(gridX, gridY), CV_WARP_INVERSE_MAP);
-		//cv::imshow("passedFromCV", passedFromCv);
-		bezPatchMat.copyTo(passedFromCv);
+		//cv::Mat scale = (cv::Mat_<double>(3, 3) << 1.2, 0, 0, 0, 1.2, 0, 0, 0, 1);
+		//lastTransform = scale * lastTransform;
+		cv::warpPerspective(bezPatchMat, passedFromCv, lastTransform, cv::Size(gridX, gridY), CV_WARP_INVERSE_MAP);
+		cv::imshow("passedFromCV", passedFromCv);
+		//bezPatchMat.copyTo(passedFromCv);
 		break;
 	}
 	glutPostRedisplay();

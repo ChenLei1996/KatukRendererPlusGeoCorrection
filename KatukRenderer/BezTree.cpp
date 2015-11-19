@@ -161,11 +161,11 @@ BezTreeNode::BezTreeNode(int _lv, float us, float ue, float vs, float ve,
 
 	const double Height = static_cast<double>(GeoCorrection::gridY) - 1;
 	// compute bezier control points
-	Vector2f p00(tree->transformedPoints[idx[0]].at<double>(0, 0), Height-tree->transformedPoints[idx[0]].at<double>(1, 0)),
-		p02(tree->transformedPoints[idx[2]].at<double>(0, 0), Height-tree->transformedPoints[idx[2]].at<double>(1, 0)),
-		p01 = estimateControlPoint(p00, p02, cv::Point2f(tree->transformedPoints[idx[1]].at<double>(0, 0), Height-tree->transformedPoints[idx[1]].at<double>(1, 0)), 0.5),
-		p20(tree->transformedPoints[idx[6]].at<double>(0, 0), Height-tree->transformedPoints[idx[6]].at<double>(1, 0)),
-		p22(tree->transformedPoints[idx[8]].at<double>(0, 0), Height-tree->transformedPoints[idx[8]].at<double>(1, 0)),
+	Vector2f p00(tree->transformedPoints[idx[0]].at<double>(0, 0), Height - tree->transformedPoints[idx[0]].at<double>(1, 0)),
+		p02(tree->transformedPoints[idx[2]].at<double>(0, 0), Height - tree->transformedPoints[idx[2]].at<double>(1, 0)),
+		p01 = estimateControlPoint(p00, p02, cv::Point2f(tree->transformedPoints[idx[1]].at<double>(0, 0), Height - tree->transformedPoints[idx[1]].at<double>(1, 0)), 0.5),
+		p20(tree->transformedPoints[idx[6]].at<double>(0, 0), Height - tree->transformedPoints[idx[6]].at<double>(1, 0)),
+		p22(tree->transformedPoints[idx[8]].at<double>(0, 0), Height - tree->transformedPoints[idx[8]].at<double>(1, 0)),
 		p21 = estimateControlPoint(p20, p22, cv::Point2f(tree->transformedPoints[idx[7]].at<double>(0, 0), Height - tree->transformedPoints[idx[7]].at<double>(1, 0)), 0.5),
 		p10 = estimateControlPoint(p00, p20, cv::Point2f(tree->transformedPoints[idx[3]].at<double>(0, 0), Height - tree->transformedPoints[idx[3]].at<double>(1, 0)), 0.5),
 		p12 = estimateControlPoint(p02, p22, cv::Point2f(tree->transformedPoints[idx[5]].at<double>(0, 0), Height - tree->transformedPoints[idx[5]].at<double>(1, 0)), 0.5),
@@ -180,6 +180,7 @@ BezTreeNode::BezTreeNode(int _lv, float us, float ue, float vs, float ve,
 		glProjPoint6(tree->projPoints[idx[6]].x, Height - tree->projPoints[idx[6]].y),
 		glProjPoint7(tree->projPoints[idx[7]].x, Height - tree->projPoints[idx[7]].y),
 		glProjPoint8(tree->projPoints[idx[8]].x, Height - tree->projPoints[idx[8]].y);
+
 	// actual bezier control points, need to differntiate delta
 	surface = new QuadBezierPatch2f(2.0f*glProjPoint0 - p00,
 		2.0f*glProjPoint1 - p01,
