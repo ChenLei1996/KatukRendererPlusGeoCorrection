@@ -24,7 +24,7 @@ vector<Vector3f> BernsVal;
 vector<Vector2f> BezPatch;
 vector<vector<unsigned>> bezPatchIdx;
 vector<cv::Point2f> bezControlPoints;
-const unsigned int steps = 10;
+unsigned int steps;
 BezTree *quadBezTree;
 int patchDrawLevel = 0;
 
@@ -109,9 +109,10 @@ void GeoCorrection::runCorrection(int level)
 	std::cout << toProjector[rootIdx[7]] << std::endl;
 	std::cout << toProjector[rootIdx[8]] << std::endl;*/
 
+	steps = row - 1;
 	genBernsVal(BernsVal, BernCoff, steps);
 	quadBezTree = new BezTree(toProjector, gridDetects, level);
-
+	
 	corrected = true;
 }
 
@@ -154,7 +155,8 @@ void GeoCorrection::findGrids(Geotype type, int level)
 		//std::cout << m_corners.at<cv::Point2f>(i, 0) << std::endl;
 		circle(cornerDisplayed, m_corners.at<cv::Point2f>(i, 0), 5, cv::Scalar(255.0, 255.0, .0, 255.0), 2, 8, 0);
 	}
-	cv::imshow("feature Points", cornerDisplayed);
+	std::string winTitle = (type == PROJECTION) ? "Projector": "Camera";
+	cv::imshow(winTitle, cornerDisplayed);
 	cv::waitKey(0);
 
 	sort(m_corners, level);
