@@ -89,26 +89,6 @@ void GeoCorrection::runCorrection(int level)
 		toProjector.push_back(tmp);
 	}
 
-	int rootIdx[9];
-	rootIdx[0] = 0;
-	rootIdx[2] = row - 1;
-	rootIdx[8] = row*row - 1;
-	rootIdx[6] = row*(row - 1);
-	rootIdx[1] = (rootIdx[0] + rootIdx[2]) / 2;
-	rootIdx[7] = (rootIdx[6] + rootIdx[8]) / 2;
-	rootIdx[3] = (rootIdx[0] + rootIdx[6]) / 2;
-	rootIdx[5] = (rootIdx[2] + rootIdx[8]) / 2;
-	rootIdx[4] = (rootIdx[3] + rootIdx[5]) / 2;
-	/*std::cout << toProjector[rootIdx[0]] << std::endl;
-	std::cout << toProjector[rootIdx[1]] << std::endl;
-	std::cout << toProjector[rootIdx[2]] << std::endl;
-	std::cout << toProjector[rootIdx[3]] << std::endl;
-	std::cout << toProjector[rootIdx[4]] << std::endl;
-	std::cout << toProjector[rootIdx[5]] << std::endl;
-	std::cout << toProjector[rootIdx[6]] << std::endl;
-	std::cout << toProjector[rootIdx[7]] << std::endl;
-	std::cout << toProjector[rootIdx[8]] << std::endl;*/
-
 	steps = row - 1;
 	genBernsVal(BernsVal, BernCoff, steps);
 	quadBezTree = new BezTree(toProjector, gridDetects, level);
@@ -159,6 +139,12 @@ void GeoCorrection::findGrids(Geotype type, int level)
 	cv::imshow(winTitle, cornerDisplayed);
 	cv::waitKey(0);
 
+	// change Y coordinate for OpenGL
+	for (std::size_t i = 0; i < numCorners; i++)
+	{
+		m_corners.at<cv::Point2f>(i, 0).y = static_cast<float>(targetImage.rows - 1) - m_corners.at<cv::Point2f>(i, 0).y;
+	}
+		
 	sort(m_corners, level);
 	for (std::size_t i = 0; i < numCorners; i++)
 		target.push_back(m_corners.at<cv::Point2f>(i, 0));
@@ -180,7 +166,7 @@ void GeoCorrection::sort(cv::Mat& arr, int level)
 	{
 		int j = i - 1;
 		cv::Point2f target = arr.at<cv::Point2f>(i, 0);
-		while (j >= 0 && target.y < arr.at<cv::Point2f>(j, 0).y)
+		while (j >= 0 && target.x < arr.at<cv::Point2f>(j, 0).x)
 		{
 			arr.at<cv::Point2f>(j + 1, 0) = arr.at<cv::Point2f>(j, 0);
 			j--;
@@ -196,7 +182,7 @@ void GeoCorrection::sort(cv::Mat& arr, int level)
 			int lim = row*i;
 			cv::Point2f target = arr.at<cv::Point2f>(k, 0);
 			while ((j >= lim)
-				&& (target.x < arr.at<cv::Point2f>(j, 0).x))
+				&& (target.y < arr.at<cv::Point2f>(j, 0).y))
 			{
 				arr.at<cv::Point2f>(j + 1, 0) = arr.at<cv::Point2f>(j, 0);
 				j--;
@@ -237,7 +223,8 @@ void GeoCorrection::bezfitDisplay()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(-10, gridX+10, -10, gridX+10, -1, 1);
+	//glOrtho(-10, gridX+10, -10, gridX+10, -1, 1);
+	glOrtho(0, gridX, 0, gridX, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
@@ -286,15 +273,11 @@ void GeoCorrection::bezfitKeyboard(unsigned char key, int x, int y)
 		cv::flip(bezPatchMat, bezPatchMat, 0);
 		cv::imshow("before warping", bezPatchMat);
 		// _trfReference, _squareReference
-		cv::Mat lastTransform = cv::getPerspectiveTransform(_squareReference, _trfReference);
+		/*cv::Mat lastTransform = cv::getPerspectiveTransform(_squareReference, _trfReference);
 		std::cout << lastTransform << std::endl;
-		//double LenW = static_cast<double>(_squareReference[1].x - _squareReference[0].x);
-		//double LenH = static_cast<double>(_squareReference[2].y - _squareReference[0].y);
-		//cv::Mat scale = (cv::Mat_<double>(3, 3) << 1.2, 0, 0, 0, 1.2, 0, 0, 0, 1);
-		//lastTransform = scale * lastTransform;
 		cv::warpPerspective(bezPatchMat, passedFromCv, lastTransform, cv::Size(gridX, gridY), CV_WARP_INVERSE_MAP);
-		cv::imshow("passedFromCV", passedFromCv);
-		//bezPatchMat.copyTo(passedFromCv);
+		cv::imshow("passedFromCV", passedFromCv);*/
+		bezPatchMat.copyTo(passedFromCv);
 		break;
 	}
 	glutPostRedisplay();

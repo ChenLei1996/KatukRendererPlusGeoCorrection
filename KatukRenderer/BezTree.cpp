@@ -18,9 +18,9 @@ BezTree::BezTree(const std::vector<cv::Mat>& _trfPnts, const std::vector<cv::Poi
 	int row = static_cast<int>(sqrt(projPnts.size()));
 	int rootIdx[9];
 	rootIdx[0] = 0;
-	rootIdx[2] = row - 1;
+	rootIdx[2] = row*(row - 1);// row - 1;
+	rootIdx[6] = row - 1;// row*(row - 1);
 	rootIdx[8] = row*row - 1;
-	rootIdx[6] = row*(row - 1);
 	rootIdx[1] = (rootIdx[0] + rootIdx[2]) / 2;
 	rootIdx[7] = (rootIdx[6] + rootIdx[8]) / 2;
 	rootIdx[3] = (rootIdx[0] + rootIdx[6]) / 2;
@@ -159,39 +159,67 @@ BezTreeNode::BezTreeNode(int _lv, float us, float ue, float vs, float ve,
 	child[0] = child[1] = child[2] = child[3] = NULL;
 	memcpy(idx, _idx, sizeof(int) * 9);
 
-	const double Height = static_cast<double>(GeoCorrection::gridY) - 1;
+	//const double Height = static_cast<double>(GeoCorrection::gridY) - 1;
 	// compute bezier control points
-	Vector2f p00(tree->transformedPoints[idx[0]].at<double>(0, 0), Height - tree->transformedPoints[idx[0]].at<double>(1, 0)),
-		p02(tree->transformedPoints[idx[2]].at<double>(0, 0), Height - tree->transformedPoints[idx[2]].at<double>(1, 0)),
-		p01 = estimateControlPoint(p00, p02, cv::Point2f(tree->transformedPoints[idx[1]].at<double>(0, 0), Height - tree->transformedPoints[idx[1]].at<double>(1, 0)), 0.5),
-		p20(tree->transformedPoints[idx[6]].at<double>(0, 0), Height - tree->transformedPoints[idx[6]].at<double>(1, 0)),
-		p22(tree->transformedPoints[idx[8]].at<double>(0, 0), Height - tree->transformedPoints[idx[8]].at<double>(1, 0)),
-		p21 = estimateControlPoint(p20, p22, cv::Point2f(tree->transformedPoints[idx[7]].at<double>(0, 0), Height - tree->transformedPoints[idx[7]].at<double>(1, 0)), 0.5),
-		p10 = estimateControlPoint(p00, p20, cv::Point2f(tree->transformedPoints[idx[3]].at<double>(0, 0), Height - tree->transformedPoints[idx[3]].at<double>(1, 0)), 0.5),
-		p12 = estimateControlPoint(p02, p22, cv::Point2f(tree->transformedPoints[idx[5]].at<double>(0, 0), Height - tree->transformedPoints[idx[5]].at<double>(1, 0)), 0.5),
-		p11 = estimateControlPoint(p10, p12, cv::Point2f(tree->transformedPoints[idx[4]].at<double>(0, 0), Height - tree->transformedPoints[idx[4]].at<double>(1, 0)), 0.5);
+	Vector2f p00(tree->transformedPoints[idx[0]].at<double>(0, 0),  tree->transformedPoints[idx[0]].at<double>(1, 0)),
+		p02(tree->transformedPoints[idx[2]].at<double>(0, 0),  tree->transformedPoints[idx[2]].at<double>(1, 0)),
+		p01 = estimateControlPoint(p00, p02, cv::Point2f(tree->transformedPoints[idx[1]].at<double>(0, 0),  tree->transformedPoints[idx[1]].at<double>(1, 0)), 0.5),
+		p20(tree->transformedPoints[idx[6]].at<double>(0, 0),  tree->transformedPoints[idx[6]].at<double>(1, 0)),
+		p22(tree->transformedPoints[idx[8]].at<double>(0, 0),  tree->transformedPoints[idx[8]].at<double>(1, 0)),
+		p21 = estimateControlPoint(p20, p22, cv::Point2f(tree->transformedPoints[idx[7]].at<double>(0, 0),  tree->transformedPoints[idx[7]].at<double>(1, 0)), 0.5),
+		p10 = estimateControlPoint(p00, p20, cv::Point2f(tree->transformedPoints[idx[3]].at<double>(0, 0),  tree->transformedPoints[idx[3]].at<double>(1, 0)), 0.5),
+		p12 = estimateControlPoint(p02, p22, cv::Point2f(tree->transformedPoints[idx[5]].at<double>(0, 0),  tree->transformedPoints[idx[5]].at<double>(1, 0)), 0.5),
+		p11 = estimateControlPoint(p10, p12, cv::Point2f(tree->transformedPoints[idx[4]].at<double>(0, 0),  tree->transformedPoints[idx[4]].at<double>(1, 0)), 0.5);
 
-	Vector2f glProjPoint0(tree->projPoints[idx[0]].x, Height - tree->projPoints[idx[0]].y),
-		glProjPoint1(tree->projPoints[idx[1]].x, Height - tree->projPoints[idx[1]].y),
-		glProjPoint2(tree->projPoints[idx[2]].x, Height - tree->projPoints[idx[2]].y),
-		glProjPoint3(tree->projPoints[idx[3]].x, Height - tree->projPoints[idx[3]].y),
-		glProjPoint4(tree->projPoints[idx[4]].x, Height - tree->projPoints[idx[4]].y),
-		glProjPoint5(tree->projPoints[idx[5]].x, Height - tree->projPoints[idx[5]].y),
-		glProjPoint6(tree->projPoints[idx[6]].x, Height - tree->projPoints[idx[6]].y),
-		glProjPoint7(tree->projPoints[idx[7]].x, Height - tree->projPoints[idx[7]].y),
-		glProjPoint8(tree->projPoints[idx[8]].x, Height - tree->projPoints[idx[8]].y);
+	Vector2f glProjPoint0(tree->projPoints[idx[0]].x,  tree->projPoints[idx[0]].y),
+		glProjPoint1(tree->projPoints[idx[1]].x,  tree->projPoints[idx[1]].y),
+		glProjPoint2(tree->projPoints[idx[2]].x,  tree->projPoints[idx[2]].y),
+		glProjPoint3(tree->projPoints[idx[3]].x,  tree->projPoints[idx[3]].y),
+		glProjPoint4(tree->projPoints[idx[4]].x,  tree->projPoints[idx[4]].y),
+		glProjPoint5(tree->projPoints[idx[5]].x,  tree->projPoints[idx[5]].y),
+		glProjPoint6(tree->projPoints[idx[6]].x,  tree->projPoints[idx[6]].y),
+		glProjPoint7(tree->projPoints[idx[7]].x,  tree->projPoints[idx[7]].y),
+		glProjPoint8(tree->projPoints[idx[8]].x,  tree->projPoints[idx[8]].y);
 
-	// actual bezier control points, need to differntiate delta
-	surface = new QuadBezierPatch2f(2.0f*glProjPoint0 - p00,
-		2.0f*glProjPoint1 - p01,
-		2.0f*glProjPoint2 - p02,
-		2.0f*glProjPoint3 - p10,
-		2.0f*glProjPoint4 - p11,
-		2.0f*glProjPoint5 - p12,
-		2.0f*glProjPoint6 - p20,
-		2.0f*glProjPoint7 - p21,
-		2.0f*glProjPoint8 - p22
-		);
+	if (p == nullptr)
+	{
+		// actual bezier control points, need to differntiate delta
+		/*surface = new QuadBezierPatch2f(2.0f*glProjPoint0 - p00,
+			2.0f*glProjPoint1 - p01,
+			2.0f*glProjPoint2 - p02,
+			2.0f*glProjPoint3 - p10,
+			2.0f*glProjPoint4 - p11,
+			2.0f*glProjPoint5 - p12,
+			2.0f*glProjPoint6 - p20,
+			2.0f*glProjPoint7 - p21,
+			2.0f*glProjPoint8 - p22
+			);*/
+		surface = new QuadBezierPatch2f(glProjPoint0 ,
+			2.0f*glProjPoint1 - p01,
+			glProjPoint2,
+			2.0f*glProjPoint3 - p10,
+			2.0f*glProjPoint4 - p11,
+			2.0f*glProjPoint5 - p12,
+			glProjPoint6,
+			2.0f*glProjPoint7 - p21,
+			glProjPoint8);
+	}
+	else
+	{
+		std::cout << "subdivision above 0th level" << std::endl;
+		size_t row = sqrt(p->bezPatch.size());
+		surface = new QuadBezierPatch2f(p->bezPatch[idx[0]],
+			2.0*glProjPoint1 - p01,
+			p->bezPatch[idx[2]],
+			2.0*glProjPoint3 - p10,
+			2.0*glProjPoint4 - p11,
+			2.0*glProjPoint5 - p12,
+			p->bezPatch[idx[6]],
+			2.0*glProjPoint7 - p21,
+			p->bezPatch[idx[8]]
+			);
+	}
+	
 
 	// generate vertices and mesh indices
 	surface->interpolate(bezPatch, bezPatchIdx, BernsVal, 0, BernsVal.size());
@@ -222,7 +250,6 @@ void BezTreeNode::draw()
 	}
 	glEnd();
 }
-
 
 BezTreeNode::~BezTreeNode()
 {

@@ -100,14 +100,16 @@ void keyboard(unsigned char key, int x, int y)
 	case 'C':
 		std::cout << "\n Pass rendering to geometric correction path." << std::endl;
 		// calibration part
-		passToCV.create(scene->w, scene->h, CV_8UC3);
+		/*passToCV.create(scene->w, scene->h, CV_8UC3);
 		scene->writeImage(passToCV, intensity);
 		cv::flip(passToCV, passToCV, 0);
 		cv::imshow("passToCV", passToCV);
-		GeoCorrection geoCorrection(*scene->plight->texture, passToCV);
+		GeoCorrection geoCorrection(*scene->plight->texture, passToCV);*/
 		
-		/*cv::Mat image = cv::imread("rendering-checker-lv2.jpg", cv::IMREAD_COLOR);
-		GeoCorrection geoCorrection(*scene->plight->texture, image);*/
+		// temporary test code, plug saved image for geometric correction
+		cv::Mat image = cv::imread("rendering-checker-lv2.jpg", cv::IMREAD_COLOR);
+		GeoCorrection geoCorrection(*scene->plight->texture, image);
+		// temporary test code end
 		geoCorrection.runCorrection(2);
 		geoCorrection.initTexWindow();
 		break;
