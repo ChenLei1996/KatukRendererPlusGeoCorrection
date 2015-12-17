@@ -34,6 +34,7 @@ public:
 	~BezTreeNode();
 	void draw();
 	void subdivide();
+	void getMinMax(cv::Size& minsize, cv::Size& maxsize);
 
 	int lv;
 	int idx[9];

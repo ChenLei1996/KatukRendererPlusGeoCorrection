@@ -4,6 +4,7 @@
 
 class Vector3f;
 class Matrix3f;
+using cv::Mat;
 
 class GeoCorrection
 {
@@ -14,6 +15,7 @@ public:
 	~GeoCorrection();
 	void runCorrection(int level);
 	void bakeCorrection(const cv::Mat& source, cv::Mat& destination);
+	void updateImages(const Mat& _grid, const Mat& _rtImage);
 
 	// opengl functions
 	void initTexWindow();

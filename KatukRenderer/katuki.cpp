@@ -19,6 +19,7 @@ extern float* intensity;
 extern Scene* scene;
 static cv::Mat passToCV;
 cv::Mat passedFromCv;
+GeoCorrection *geoCorrection;
 
 const string windowName("Ray tracing with Geometric Correction");
 
@@ -42,7 +43,7 @@ int main(int argc, char* argv[])
 	
 	// Release resources
 	releaseScene();
-
+	delete geoCorrection;
 	return 0;
 }
 
@@ -100,18 +101,25 @@ void keyboard(unsigned char key, int x, int y)
 	case 'C':
 		std::cout << "\n Pass rendering to geometric correction path." << std::endl;
 		// calibration part
-		/*passToCV.create(scene->w, scene->h, CV_8UC3);
+		passToCV.create(scene->w, scene->h, CV_8UC3);
 		scene->writeImage(passToCV, intensity);
 		cv::flip(passToCV, passToCV, 0);
-		cv::imshow("passToCV", passToCV);
-		GeoCorrection geoCorrection(*scene->plight->texture, passToCV);*/
-		
-		// temporary test code, plug saved image for geometric correction
-		cv::Mat image = cv::imread("rendering-checker-lv2.jpg", cv::IMREAD_COLOR);
-		GeoCorrection geoCorrection(*scene->plight->texture, image);
-		// temporary test code end
-		geoCorrection.runCorrection(2);
-		geoCorrection.initTexWindow();
+		//cv::imshow("passToCV", passToCV);
+		if (geoCorrection == nullptr)
+		{
+			geoCorrection = new GeoCorrection(*scene->plight->texture, passToCV);
+			// temporary test code, plug saved image for geometric correction
+			//cv::Mat image = cv::imread("rendering-checker-lv2.jpg", cv::IMREAD_COLOR);
+			//geoCorrection = new GeoCorrection(*scene->plight->texture, image);
+			// temporary test code end
+			geoCorrection->runCorrection(2);
+			geoCorrection->initTexWindow();
+		}
+		else
+		{
+			geoCorrection->updateImages(*scene->plight->texture, passToCV);
+			geoCorrection->runCorrection(2);
+		}
 		break;
 	
 	}

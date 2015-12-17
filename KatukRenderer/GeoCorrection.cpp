@@ -10,6 +10,8 @@
 #include "BezTree.h"
 #include <memory>
 
+using std::cout;
+using std::endl;
 using std::vector;
 
 int GeoCorrection::gridX;
@@ -49,18 +51,36 @@ GeoCorrection::GeoCorrection(const cv::Mat _grid, const cv::Mat _rtImage, int _l
 	gridY = grid.rows;
 	rtX = rtImage.cols;
 	rtY = rtImage.rows;
+
+}
+
+void GeoCorrection::updateImages(const Mat& _grid, const Mat& _rtImage)
+{
+	grid = _grid;
+	rtImage = _rtImage;
+	gridX = grid.cols;
+	gridY = grid.rows;
+	rtX = rtImage.cols;
+	rtY = rtImage.rows;
 }
 
 // run geometric correction
 void GeoCorrection::runCorrection(int level)
 {
+	// clear detected points
+	rtDetects.clear();
+	gridDetects.clear();
+
 	// find reference points in ray-traced image(camera) and projection image(projector)
 	findGrids(RENDER, level);
 	findGrids(PROJECTION, level);
+	cout << "Detected points in camera: " << rtDetects.size() << endl
+		<< "Detected points in projection: " << gridDetects.size() << endl;
 
 	// find homography
 	int row = static_cast<int>(sqrt(rtDetects.size()));
 	vector<cv::Point2f> projcorners;
+	
 	projcorners.push_back(gridDetects[0]);
 	projcorners.push_back(gridDetects[row - 1]);
 	projcorners.push_back(gridDetects[row*row-1]);
@@ -90,7 +110,14 @@ void GeoCorrection::runCorrection(int level)
 	}
 
 	steps = row - 1;
-	genBernsVal(BernsVal, BernCoff, steps);
+	if (BernsVal.size() == 0)
+		genBernsVal(BernsVal, BernCoff, steps);
+	if (quadBezTree)
+	{
+		cout << "Delete quadBezTree and initialize new quadBezTree" << endl;
+		delete quadBezTree;
+
+	}
 	quadBezTree = new BezTree(toProjector, gridDetects, level);
 	
 	corrected = true;
@@ -224,7 +251,12 @@ void GeoCorrection::bezfitDisplay()
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	//glOrtho(-10, gridX+10, -10, gridX+10, -1, 1);
-	glOrtho(0, gridX, 0, gridX, -1, 1);
+	cv::Size mins, maxs;
+	quadBezTree->root->getMinMax(mins, maxs);
+	cout << "quadBezTree::root::getMinMax: " << mins << maxs << endl;
+	
+	glOrtho(mins.width, maxs.width, mins.height, maxs.height, -1, 1);
+	//glOrtho(0, gridX, 0, gridX, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 

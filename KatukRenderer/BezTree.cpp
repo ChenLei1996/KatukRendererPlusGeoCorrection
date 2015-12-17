@@ -68,6 +68,27 @@ void BezTree::draw(int lv)
 	}
 }
 
+void BezTreeNode::getMinMax(cv::Size& minsize, cv::Size& maxsize)
+{
+	float minx = 1e8, miny = 1e8, maxx = -1e8, maxy = -1e8;
+	std::vector<Vector2f>::iterator iter = bezPatch.begin();
+	for (; iter != bezPatch.end(); ++iter)
+	{
+		if (iter->x < minx)
+			minx = iter->x;
+		if (iter->x > maxx)
+			maxx = iter->x;
+		if (iter->y < miny)
+			miny = iter->y;
+		if (iter->y > maxy)
+			maxy = iter->y;
+	}
+	minsize.width = minx;
+	minsize.height = miny;
+	maxsize.width = maxx;
+	maxsize.height = maxy;
+}
+
 void BezTreeNode::subdivide()
 {
 	if (child[0] == NULL)
