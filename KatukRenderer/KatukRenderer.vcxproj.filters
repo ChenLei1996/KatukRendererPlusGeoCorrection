@@ -63,7 +63,7 @@
     <ClInclude Include="GeoCorrection.h">
       <Filter>헤더 파일\geocorr</Filter>
     </ClInclude>
-    <ClInclude Include="BezTree.h">
+    <ClInclude Include="BezPatch.h">
       <Filter>헤더 파일\geocorr</Filter>
     </ClInclude>
   </ItemGroup>
@@ -98,7 +98,7 @@
     <ClCompile Include="GeoCorrection.cpp">
       <Filter>소스 파일\geocorr</Filter>
     </ClCompile>
-    <ClCompile Include="BezTree.cpp">
+    <ClCompile Include="BezPatch.cc">
       <Filter>소스 파일\geocorr</Filter>
     </ClCompile>
   </ItemGroup>

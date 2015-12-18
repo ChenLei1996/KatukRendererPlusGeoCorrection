@@ -7,7 +7,8 @@
 #include <opencv2/flann.hpp>
 #include "../QuadBezLib/QuadBezier.h"
 #include "GeoCorrection.h"
-#include "BezTree.h"
+#include "BezPatch.h"
+//#include "BezTree.h"
 #include <memory>
 
 using std::cout;
@@ -20,15 +21,16 @@ int GeoCorrection::rtX;
 int GeoCorrection::rtY;
 extern cv::Mat passedFromCv;
 
-QuadBezierPatch2f surface;
-const Matrix3f BernCoff(1.0, -2.0, 1.0, 0.0, 2.0, -2.0, 0.0, 0.0, 1.0);
-vector<Vector3f> BernsVal;
-vector<Vector2f> BezPatch;
-vector<vector<unsigned>> bezPatchIdx;
-vector<cv::Point2f> bezControlPoints;
-unsigned int steps;
-BezTree *quadBezTree;
-int patchDrawLevel = 0;
+//QuadBezierPatch2f surface;
+//const Matrix3f BernCoff(1.0, -2.0, 1.0, 0.0, 2.0, -2.0, 0.0, 0.0, 1.0);
+//vector<Vector3f> BernsVal;
+//vector<Vector2f> BezPatch;
+//vector<vector<unsigned>> bezPatchIdx;
+//vector<cv::Point2f> bezControlPoints;
+//unsigned int steps;
+//BezTree *quadBezTree;
+BezPatch *bezPatch;
+int patchDrawLevel;
 
 cv::Point2f _trfReference[] = {
 	//cv::Point2f(198, 218), cv::Point2f(508, 183), cv::Point2f(174, 532), cv::Point2f(514, 545)
@@ -67,13 +69,17 @@ void GeoCorrection::updateImages(const Mat& _grid, const Mat& _rtImage)
 // run geometric correction
 void GeoCorrection::runCorrection(int level)
 {
+	// patch drawing level increases by operating this function
+	patchDrawLevel = level;
+	cout << "GeoCorrection::runCorrection patch draw level: " << patchDrawLevel << endl;
+	
 	// clear detected points
 	rtDetects.clear();
 	gridDetects.clear();
 
 	// find reference points in ray-traced image(camera) and projection image(projector)
-	findGrids(RENDER, level);
-	findGrids(PROJECTION, level);
+	findGrids(RENDER, subdivLv);
+	findGrids(PROJECTION, subdivLv);
 	cout << "Detected points in camera: " << rtDetects.size() << endl
 		<< "Detected points in projection: " << gridDetects.size() << endl;
 
@@ -109,7 +115,7 @@ void GeoCorrection::runCorrection(int level)
 		toProjector.push_back(tmp);
 	}
 
-	steps = row - 1;
+	/*steps = row - 1;
 	if (BernsVal.size() == 0)
 		genBernsVal(BernsVal, BernCoff, steps);
 	if (quadBezTree)
@@ -118,8 +124,22 @@ void GeoCorrection::runCorrection(int level)
 		delete quadBezTree;
 
 	}
-	quadBezTree = new BezTree(toProjector, gridDetects, level);
-	
+	quadBezTree = new BezTree(toProjector, gridDetects, subdivLv);*/
+
+	// subdivLv == max subdivison level
+	if (bezPatch == nullptr)
+		bezPatch = new BezPatch(toProjector, gridDetects, subdivLv);
+	else
+	{
+		// update feature data
+		bezPatch->updatePoints(toProjector, gridDetects);
+
+		// update texture coordinate
+		bezPatch->updateLUT(level);
+		
+		// subdivide bezPatch
+		bezPatch->subdivide();
+	}
 	corrected = true;
 }
 
@@ -138,7 +158,7 @@ void GeoCorrection::bakeCorrection(const cv::Mat& source, cv::Mat& destination)
 // find reference points in specified type
 void GeoCorrection::findGrids(Geotype type, int level)
 {
-	int row = pow(2, level + 1) + 1;
+	int row = static_cast<int>(pow(2, level + 1) + 1);
 	int numCorners = row * row;
 
 	std::vector<cv::Point2f>& target = (type == PROJECTION) ? gridDetects : rtDetects;
@@ -189,7 +209,7 @@ void GeoCorrection::sort(cv::Mat& arr, int level)
 {
 	int row = pow(2, level + 1) + 1;
 	// sorting
-	for (unsigned int i = 1; i < row*row; i++)
+	for (int i = 1; i < row*row; i++)
 	{
 		int j = i - 1;
 		cv::Point2f target = arr.at<cv::Point2f>(i, 0);
@@ -246,13 +266,12 @@ void GeoCorrection::initTexWindow()
 // opengl functions
 void GeoCorrection::bezfitDisplay()
 {
-
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	//glOrtho(-10, gridX+10, -10, gridX+10, -1, 1);
-	cv::Size mins, maxs;
-	quadBezTree->root->getMinMax(mins, maxs);
+	cv::Size2f mins, maxs;
+	bezPatch->getMinMax(patchDrawLevel, mins, maxs);
 	cout << "quadBezTree::root::getMinMax: " << mins << maxs << endl;
 	
 	glOrtho(mins.width, maxs.width, mins.height, maxs.height, -1, 1);
@@ -261,10 +280,10 @@ void GeoCorrection::bezfitDisplay()
 	glLoadIdentity();
 
 	std::vector<unsigned> tmpIdx;
-	double s, t;
-	unsigned int rows = steps + 1;
+	//double s, t;
+	//unsigned int rows = steps + 1;
 	glBindTexture(GL_TEXTURE_2D, tex);
-	quadBezTree->draw(patchDrawLevel);
+	bezPatch->draw(patchDrawLevel);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glutSwapBuffers();
@@ -279,20 +298,20 @@ void GeoCorrection::bezfitKeyboard(unsigned char key, int x, int y)
 		break;
 
 	case '0':
-		patchDrawLevel = 0;
+		//patchDrawLevel = 0;
 		break;
 	case '1':
-		patchDrawLevel = 1;
+		//patchDrawLevel = 1;
 		break;
 	case '2':
-		patchDrawLevel = 2;
+		//patchDrawLevel = 2;
 		break;
 
 	case 'd':
 	case 'D':
 		// bezier patch subdivide
-		std::cout << " Subdivide Bezier Patch " << std::endl;
-		quadBezTree->subdivide();
+		//std::cout << " Subdivide Bezier Patch " << std::endl;
+		//bezPatch->subdivide();
 		break;
 
 	case 'p':
@@ -315,16 +334,16 @@ void GeoCorrection::bezfitKeyboard(unsigned char key, int x, int y)
 	glutPostRedisplay();
 }
 
-void genBernsVal(std::vector<Vector3f>& container, const Matrix3f& coffMat, unsigned int steps)
-{
-	Vector3f tmp;
-	tmp.x = 1.0;
-	double u;
-	for (unsigned int i = 1; i <= steps; i++)
-	{
-		u = i / (double)steps;
-		tmp.y = u;
-		tmp.z = u*u;
-		container.push_back(coffMat * tmp);
-	}
-}
+//void genBernsVal(std::vector<Vector3f>& container, const Matrix3f& coffMat, unsigned int steps)
+//{
+//	Vector3f tmp;
+//	tmp.x = 1.0;
+//	double u;
+//	for (unsigned int i = 1; i <= steps; i++)
+//	{
+//		u = i / (double)steps;
+//		tmp.y = u;
+//		tmp.z = u*u;
+//		container.push_back(coffMat * tmp);
+//	}
+//}

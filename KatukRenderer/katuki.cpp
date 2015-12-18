@@ -15,11 +15,16 @@
 
 #pragma comment(lib,"glew32.lib")
 
+using std::cout;
+using std::endl;
+
 extern float* intensity;
 extern Scene* scene;
 static cv::Mat passToCV;
 cv::Mat passedFromCv;
 GeoCorrection *geoCorrection;
+int max_subdiv_lv;
+int curBezLv = 0;
 
 const string windowName("Ray tracing with Geometric Correction");
 
@@ -28,8 +33,11 @@ int main(int argc, char* argv[])
 	// Ray tracing initialization
 	if (argc == 1)
 		return 0;
-	initScene(string(argv[1]));
-
+	string texName = string(argv[1]);
+	initScene(texName);
+	size_t at = texName.find('.');
+	max_subdiv_lv = atoi(&texName[at - 1]);
+	//cout << max_subdiv_lv << endl;
 	// GLUT initlization and run
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH);
@@ -107,18 +115,18 @@ void keyboard(unsigned char key, int x, int y)
 		//cv::imshow("passToCV", passToCV);
 		if (geoCorrection == nullptr)
 		{
-			geoCorrection = new GeoCorrection(*scene->plight->texture, passToCV);
+			geoCorrection = new GeoCorrection(*scene->plight->texture, passToCV, max_subdiv_lv);
 			// temporary test code, plug saved image for geometric correction
 			//cv::Mat image = cv::imread("rendering-checker-lv2.jpg", cv::IMREAD_COLOR);
 			//geoCorrection = new GeoCorrection(*scene->plight->texture, image);
 			// temporary test code end
-			geoCorrection->runCorrection(2);
+			geoCorrection->runCorrection(curBezLv);
 			geoCorrection->initTexWindow();
 		}
 		else
 		{
 			geoCorrection->updateImages(*scene->plight->texture, passToCV);
-			geoCorrection->runCorrection(2);
+			geoCorrection->runCorrection(++curBezLv);
 		}
 		break;
 	

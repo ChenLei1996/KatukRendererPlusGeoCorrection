@@ -5,6 +5,7 @@
 class Vector3f;
 class Matrix3f;
 using cv::Mat;
+using cv::Point2f;
 
 class GeoCorrection
 {
@@ -34,7 +35,6 @@ private:
 	std::vector<cv::Point2f> gridDetects, rtDetects; // grids found in projection image(projector) and ray tracing image(camera)
 };
 
-void genBernsVal(std::vector<Vector3f>& container, const Matrix3f& coffMat, unsigned int steps);
 //inline cv::Point2f estimateControlPoint(const cv::Point2f& cp0, const cv::Point2f& cp2, const cv::Point2f& curvePoint, double t)
 //{
 //	double X, Y;

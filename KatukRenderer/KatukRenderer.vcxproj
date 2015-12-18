@@ -152,7 +152,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="BezTree.h" />
+    <ClInclude Include="BezPatch.h" />
     <ClInclude Include="core\Camera.h" />
     <ClInclude Include="core\geometry.h" />
     <ClInclude Include="core\Light.h" />
@@ -167,7 +167,7 @@
     <ClInclude Include="objloader.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BezTree.cpp" />
+    <ClCompile Include="BezPatch.cc" />
     <ClCompile Include="core\Camera.cpp" />
     <ClCompile Include="core\Light.cpp" />
     <ClCompile Include="core\Sampler.cpp" />
