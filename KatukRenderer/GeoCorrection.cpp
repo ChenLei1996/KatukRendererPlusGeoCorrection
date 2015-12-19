@@ -128,17 +128,21 @@ void GeoCorrection::runCorrection(int level)
 
 	// subdivLv == max subdivison level
 	if (bezPatch == nullptr)
+	{
+		cout << "GeoCorrection::runCorrection() > create new BezPatch()" << endl;
 		bezPatch = new BezPatch(toProjector, gridDetects, subdivLv);
+	}
 	else
 	{
+		cout << "GeoCorrection::runCorrection() > update BezPatch()" << endl;
 		// update feature data
 		bezPatch->updatePoints(toProjector, gridDetects);
 
-		// update texture coordinate
-		bezPatch->updateLUT(level);
-		
 		// subdivide bezPatch
 		bezPatch->subdivide();
+
+		// update texture coordinate
+		bezPatch->updateLUT(level);
 	}
 	corrected = true;
 }

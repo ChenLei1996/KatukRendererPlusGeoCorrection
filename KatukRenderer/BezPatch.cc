@@ -78,9 +78,9 @@ void BezPatch::draw(int lv)
 			return;
 		}
 		p->child[0]->draw();
-		p->child[1]->draw();
-		p->child[2]->draw();
-		p->child[3]->draw();
+		//p->child[1]->draw();
+		//p->child[2]->draw();
+		//p->child[3]->draw();
 	}
 }
 
@@ -97,13 +97,13 @@ void BezPatch::getMinMax(int lv, Size2f& minsize, Size2f& maxsize)
 	for (int i = 0; i < 4; i++)
 	{
 		p = root;
-		while (p->child[i] != NULL && p->child[i]->lv != lv)
+		while (p->child[i] != nullptr && p->child[i]->lv != lv)
 		{
 			p = p->child[i];
 		}
-		if (p->child[i] == NULL)
+		if (p->child[i] == nullptr)
 		{
-			std::cerr << "Subdivision is not operated yet, run subdivision first" << std::endl;
+			std::cerr << "BezPatch::getMinMax() > subdivision is not run yet" << std::endl;
 			return;
 		}
 		Size2f smin, smax;
@@ -137,17 +137,23 @@ const vector<Point2f>& BezPatch::getProjPoints() const
 
 void BezPatch::updatePoints(vector<Mat>& _trfPts, vector<Point2f>& _projPts)
 {
+	cout << "BezPatch::updatePoints() > update " << endl;
 	transformedPoints.swap(_trfPts);
 	projPoints.swap(_projPts);
+	cout << "BezPatch::updatePoints() > update complete" << endl;
 }
 
 void BezPatch::subdivide()
 {
+	cout << "BezPatch::subdivide() > subdivide " << endl;
 	root->subdivide();
+	cout << "BezPatch::subdivide() > subdivide complete" << endl;
+
 }
 
 void BezPatch::updateLUT(int lv)
 {
+	cout << "BezPatch::updateLUT() > updateLUT " << endl;
 	if (lv == 0)
 	{
 		root->updateLUT();
@@ -158,11 +164,11 @@ void BezPatch::updateLUT(int lv)
 	for (int i = 0; i < 4; i++)
 	{
 		p = root;
-		while (p->child[i] != NULL && p->child[i]->lv != lv)
+		while (p->child[i] != nullptr && p->child[i]->lv != lv)
 		{
 			p = p->child[i];
 		}
-		if (p->child[i] == NULL)
+		if (p->child[i] == nullptr)
 		{
 			std::cerr << "BezPatch::updateLUT() > Subdivision is not operated yet, run subdivision first" << std::endl;
 			return;
@@ -172,6 +178,8 @@ void BezPatch::updateLUT(int lv)
 		p->child[2]->updateLUT();
 		p->child[3]->updateLUT();
 	}
+	cout << "BezPatch::updateLUT() > updateLUT complete" << endl;
+
 }
 
 void BezTreeNode::updateLUT()
@@ -196,7 +204,7 @@ void BezTreeNode::updateLUT()
 	}
 }
 
-BezTreeNode::BezTreeNode(int _lv, int _ninterp, int _redun, BezPatch& _tree, BezTreeNode* _parent, int* _idx) :lv(_lv), ninterp(_ninterp), tree(_tree), redun(_redun)
+BezTreeNode::BezTreeNode(int _lv, int _ninterp, int _redun, BezPatch& _tree, BezTreeNode* _parent, int* _idx) :lv(_lv), ninterp(_ninterp), redun(_redun), tree(_tree)
 {
 	parent = _parent;
 	const vector<Mat>& trfPts = tree.getTransformedPoints();
@@ -204,7 +212,7 @@ BezTreeNode::BezTreeNode(int _lv, int _ninterp, int _redun, BezPatch& _tree, Bez
 	memcpy(idx, _idx, sizeof(int) * 9);
 
 	// interpolate Bernstein polynomial
-	child[0] = child[1] = child[2] = child[3] = NULL;
+	child[0] = child[1] = child[2] = child[3] = nullptr;
 	Vector2f p00(trfPts[idx[0]].at<double>(0, 0), trfPts[idx[0]].at<double>(1, 0)),
 		p02(trfPts[idx[2]].at<double>(0, 0), trfPts[idx[2]].at<double>(1, 0)),
 		p01 = estimateControlPoint(p00, p02, cv::Point2f(trfPts[idx[1]].at<double>(0, 0), trfPts[idx[1]].at<double>(1, 0)), 0.5),
@@ -225,8 +233,9 @@ BezTreeNode::BezTreeNode(int _lv, int _ninterp, int _redun, BezPatch& _tree, Bez
 		glProjPoint7(projPts[idx[7]].x, projPts[idx[7]].y),
 		glProjPoint8(projPts[idx[8]].x, projPts[idx[8]].y);
 
-	if (parent == nullptr)
+	if (_lv == 0)
 	{
+		cout << "Level zero Bezier patch" << endl;
 		surface = new QuadBezierPatch2f(p00,
 			2.0*glProjPoint1 - p01,
 			p02,
@@ -240,28 +249,27 @@ BezTreeNode::BezTreeNode(int _lv, int _ninterp, int _redun, BezPatch& _tree, Bez
 	}
 	else
 	{
-		for (size_t i = 0; i < parent->bezPatch.size(); ++i)
-		{
-			cout << parent->bezPatch[i].x << ',' << parent->bezPatch[i].y << endl;
-		}
-		for (int i = 0; i < 9; ++i)
-		{
-			cout << idx[i] << " ";
-		}
+		cout << "Level " << lv << " Bezier Patch" << endl;
+		cout << "BezTreeNode::Constructor > parent->bezPatch value" << endl;
+		cout << parent->bezPatch[idx[0]].x << ',' << parent->bezPatch[idx[0]].y << endl;
+		cout << parent->bezPatch[idx[2]].x << ',' << parent->bezPatch[idx[2]].y << endl;
+		cout << parent->bezPatch[idx[6]].x << ',' << parent->bezPatch[idx[6]].y << endl;
+		cout << parent->bezPatch[idx[8]].x << ',' << parent->bezPatch[idx[8]].y << endl;
+		
 		cout << endl;
 		cout << p00.x << ',' << p00.y << endl;
 		cout << p02.x << ',' << p02.y << endl;
 		cout << p20.x << ',' << p20.y << endl;
 		cout << p22.x << ',' << p22.y << endl;
-		surface = new QuadBezierPatch2f(parent->bezPatch[idx[0]],
+		surface = new QuadBezierPatch2f(p00, //parent->bezPatch[idx[0]],
 			2.0*glProjPoint1 - p01,
-			parent->bezPatch[idx[2]],
+			p02, //parent->bezPatch[idx[2]],
 			2.0*glProjPoint3 - p10,
 			2.0*glProjPoint4 - p11,
 			2.0*glProjPoint5 - p12,
-			parent->bezPatch[idx[6]],
+			p20, //parent->bezPatch[idx[6]],
 			2.0*glProjPoint7 - p21,
-			parent->bezPatch[idx[8]]
+			p22 //parent->bezPatch[idx[8]]
 			);
 	}
 
@@ -301,7 +309,7 @@ void BezTreeNode::draw()
 
 void BezTreeNode::subdivide()
 {
-	if (child[0] == NULL)
+	if (child[0] == nullptr)
 	{
 		if (lv >= tree.getMaxLevel())
 		{
@@ -322,7 +330,8 @@ void BezTreeNode::subdivide()
 		id0[3] = static_cast<int>((id0[0] + id0[6]) / 2.0);
 		id0[5] = static_cast<int>((id0[2] + id0[8]) / 2.0);
 		id0[4] = static_cast<int>((id0[3] + id0[5]) / 2.0);
-		child[0] = new BezTreeNode(childlv, ninterp/2, 0, tree, parent, id0);
+		cout << "First child subdivison" << endl;
+		child[0] = new BezTreeNode(childlv, ninterp/2, 0, tree, this, id0);
 
 		// child[1]
 		id1[0] = idx[1];
@@ -334,7 +343,8 @@ void BezTreeNode::subdivide()
 		id1[3] = static_cast<int>((id1[0] + id1[6]) / 2.0);
 		id1[5] = static_cast<int>((id1[2] + id1[8]) / 2.0);
 		id1[4] = static_cast<int>((id1[3] + id1[5]) / 2.0);
-		child[1] = new BezTreeNode(childlv, ninterp/2,	4, tree, parent, id1);
+		cout << "Second child subdivison" << endl;
+		child[1] = new BezTreeNode(childlv, ninterp/2,	4, tree, this, id1);
 
 		// child[2] right bottom
 		id2[0] = idx[4];
@@ -346,7 +356,8 @@ void BezTreeNode::subdivide()
 		id2[3] = static_cast<int>((id2[0] + id2[6]) / 2.0);
 		id2[5] = static_cast<int>((id2[2] + id2[8]) / 2.0);
 		id2[4] = static_cast<int>((id2[3] + id2[5]) / 2.0);
-		child[2] = new BezTreeNode(childlv, ninterp/2,  40, tree, parent, id2);
+		cout << "Thrid child subdivison" << endl;
+		child[2] = new BezTreeNode(childlv, ninterp/2,  40, tree, this, id2);
 
 		// child[3] left bottom
 		id3[0] = idx[3];
@@ -358,7 +369,8 @@ void BezTreeNode::subdivide()
 		id3[3] = static_cast<int>((id3[0] + id3[6]) / 2.0);
 		id3[5] = static_cast<int>((id3[2] + id3[8]) / 2.0);
 		id3[4] = static_cast<int>((id3[3] + id3[5]) / 2.0);
-		child[3] = new BezTreeNode(childlv, ninterp/2,  36, tree, parent, id3);
+		cout << "Fourth child subdivison" << endl;
+		child[3] = new BezTreeNode(childlv, ninterp/2,  36, tree, this, id3);
 	}
 	else
 	{
