@@ -8,8 +8,9 @@
 
 const Matrix3f BernCoff(1.0, -2.0, 1.0, 0.0, 2.0, -2.0, 0.0, 0.0, 1.0);
 
-BezPatch::BezPatch(const vector<Mat>& _trfPts, const vector<Point2f>& _projPts, int _lv) : transformedPoints(_trfPts), projPoints(_projPts), tex(_lv), maxlv(_lv)
+BezPatch::BezPatch(const vector<Mat>& _trfPts, const vector<Point2f>& _projPts, int _lv, GeoCorrection* _geoc) : transformedPoints(_trfPts), projPoints(_projPts), tex(_lv), maxlv(_lv)
 {
+	geoCorrection = _geoc;
 	// index for initial bezier patch
 	int row = static_cast<int>(pow(2, maxlv + 1) + 1);
 	int rootIdx[9];
@@ -64,23 +65,35 @@ void BezPatch::draw(int lv)
 		return;
 	}
 
+	if (lv == 1)
+	{
+		root->child[0]->draw();
+		root->child[1]->draw();
+		root->child[2]->draw();
+		root->child[3]->draw();
+		return;
+	}
+
 	BezTreeNode* p;
 	for (int i = 0; i < 4; i++)
 	{
+		int k;
 		p = root;
-		while (p->child[i] != NULL && p->child[i]->lv != lv)
-		{
+		for (k = 1; k < lv; ++k)
 			p = p->child[i];
-		}
+		/*while (p->child[i] != NULL && p->child[i]->lv != lv)
+		{
+		p = p->child[i];
+		}*/
 		if (p->child[i] == NULL)
 		{
 			std::cerr << "Subdivision is not operated yet, run subdivision first" << std::endl;
 			return;
 		}
 		p->child[0]->draw();
-		//p->child[1]->draw();
-		//p->child[2]->draw();
-		//p->child[3]->draw();
+		p->child[1]->draw();
+		p->child[2]->draw();
+		p->child[3]->draw();
 	}
 }
 
@@ -148,7 +161,6 @@ void BezPatch::subdivide()
 	cout << "BezPatch::subdivide() > subdivide " << endl;
 	root->subdivide();
 	cout << "BezPatch::subdivide() > subdivide complete" << endl;
-
 }
 
 void BezPatch::updateLUT(int lv)
@@ -213,16 +225,6 @@ BezTreeNode::BezTreeNode(int _lv, int _ninterp, int _redun, BezPatch& _tree, Bez
 
 	// interpolate Bernstein polynomial
 	child[0] = child[1] = child[2] = child[3] = nullptr;
-	Vector2f p00(trfPts[idx[0]].at<double>(0, 0), trfPts[idx[0]].at<double>(1, 0)),
-		p02(trfPts[idx[2]].at<double>(0, 0), trfPts[idx[2]].at<double>(1, 0)),
-		p01 = estimateControlPoint(p00, p02, cv::Point2f(trfPts[idx[1]].at<double>(0, 0), trfPts[idx[1]].at<double>(1, 0)), 0.5),
-		p20(trfPts[idx[6]].at<double>(0, 0), trfPts[idx[6]].at<double>(1, 0)),
-		p22(trfPts[idx[8]].at<double>(0, 0), trfPts[idx[8]].at<double>(1, 0)),
-		p21 = estimateControlPoint(p20, p22, cv::Point2f(trfPts[idx[7]].at<double>(0, 0), trfPts[idx[7]].at<double>(1, 0)), 0.5),
-		p10 = estimateControlPoint(p00, p20, cv::Point2f(trfPts[idx[3]].at<double>(0, 0), trfPts[idx[3]].at<double>(1, 0)), 0.5),
-		p12 = estimateControlPoint(p02, p22, cv::Point2f(trfPts[idx[5]].at<double>(0, 0), trfPts[idx[5]].at<double>(1, 0)), 0.5),
-		p11 = estimateControlPoint(p10, p12, cv::Point2f(trfPts[idx[4]].at<double>(0, 0), trfPts[idx[4]].at<double>(1, 0)), 0.5);
-
 	Vector2f glProjPoint0(projPts[idx[0]].x, projPts[idx[0]].y),
 		glProjPoint1(projPts[idx[1]].x, projPts[idx[1]].y),
 		glProjPoint2(projPts[idx[2]].x, projPts[idx[2]].y),
@@ -232,6 +234,16 @@ BezTreeNode::BezTreeNode(int _lv, int _ninterp, int _redun, BezPatch& _tree, Bez
 		glProjPoint6(projPts[idx[6]].x, projPts[idx[6]].y),
 		glProjPoint7(projPts[idx[7]].x, projPts[idx[7]].y),
 		glProjPoint8(projPts[idx[8]].x, projPts[idx[8]].y);
+
+	Vector2f p00(trfPts[idx[0]].at<double>(0, 0), trfPts[idx[0]].at<double>(1, 0)),
+		p02(trfPts[idx[2]].at<double>(0, 0), trfPts[idx[2]].at<double>(1, 0)),
+		p01 = estimateControlPoint(p00, p02, cv::Point2f(trfPts[idx[1]].at<double>(0, 0), trfPts[idx[1]].at<double>(1, 0)), 0.5),
+		p20(trfPts[idx[6]].at<double>(0, 0), trfPts[idx[6]].at<double>(1, 0)),
+		p22(trfPts[idx[8]].at<double>(0, 0), trfPts[idx[8]].at<double>(1, 0)),
+		p21 = estimateControlPoint(p20, p22, cv::Point2f(trfPts[idx[7]].at<double>(0, 0), trfPts[idx[7]].at<double>(1, 0)), 0.5),
+		p10 = estimateControlPoint(p00, p20, cv::Point2f(trfPts[idx[3]].at<double>(0, 0), trfPts[idx[3]].at<double>(1, 0)), 0.5),
+		p12 = estimateControlPoint(p02, p22, cv::Point2f(trfPts[idx[5]].at<double>(0, 0), trfPts[idx[5]].at<double>(1, 0)), 0.5),
+		p11 = estimateControlPoint(p10, p12, cv::Point2f(trfPts[idx[4]].at<double>(0, 0), trfPts[idx[4]].at<double>(1, 0)), 0.5);
 
 	if (_lv == 0)
 	{
@@ -249,27 +261,39 @@ BezTreeNode::BezTreeNode(int _lv, int _ninterp, int _redun, BezPatch& _tree, Bez
 	}
 	else
 	{
+		int row = static_cast<int>(sqrt(projPts.size()));
 		cout << "Level " << lv << " Bezier Patch" << endl;
 		cout << "BezTreeNode::Constructor > parent->bezPatch value" << endl;
-		cout << parent->bezPatch[idx[0]].x << ',' << parent->bezPatch[idx[0]].y << endl;
+		cout << getColumnMajorIdx(idx[0], row)<< ',' << idx[0] << endl;
+		cout << getColumnMajorIdx(idx[2], row)<< ',' << idx[2] << endl;
+		cout << getColumnMajorIdx(idx[6], row)<< ',' << idx[6] << endl;
+		cout << getColumnMajorIdx(idx[8], row)<< ',' << idx[8] << endl;
+				
+		cout << parent->bezPatch[getColumnMajorIdx(idx[0], row)].x << ',' << parent->bezPatch[getColumnMajorIdx(idx[0], row)].y << endl;
+		cout << parent->bezPatch[getColumnMajorIdx(idx[2], row)].x << ',' << parent->bezPatch[getColumnMajorIdx(idx[2], row)].y << endl;
+		cout << parent->bezPatch[getColumnMajorIdx(idx[6], row)].x << ',' << parent->bezPatch[getColumnMajorIdx(idx[6], row)].y << endl;
+		cout << parent->bezPatch[getColumnMajorIdx(idx[8], row)].x << ',' << parent->bezPatch[getColumnMajorIdx(idx[8], row)].y << endl;
+		/*cout << parent->bezPatch[idx[0]].x << ',' << parent->bezPatch[idx[0]].y << endl;
 		cout << parent->bezPatch[idx[2]].x << ',' << parent->bezPatch[idx[2]].y << endl;
 		cout << parent->bezPatch[idx[6]].x << ',' << parent->bezPatch[idx[6]].y << endl;
-		cout << parent->bezPatch[idx[8]].x << ',' << parent->bezPatch[idx[8]].y << endl;
+		cout << parent->bezPatch[idx[8]].x << ',' << parent->bezPatch[idx[8]].y << endl;*/
 		
 		cout << endl;
-		cout << p00.x << ',' << p00.y << endl;
+		/*cout << p00.x << ',' << p00.y << endl;
 		cout << p02.x << ',' << p02.y << endl;
 		cout << p20.x << ',' << p20.y << endl;
-		cout << p22.x << ',' << p22.y << endl;
-		surface = new QuadBezierPatch2f(p00, //parent->bezPatch[idx[0]],
+		cout << p22.x << ',' << p22.y << endl;*/
+		// since Bezier Patch interpolation is column-major interpolation,
+		// we need to change the index
+		surface = new QuadBezierPatch2f(parent->bezPatch[getColumnMajorIdx(idx[0],row)],
 			2.0*glProjPoint1 - p01,
-			p02, //parent->bezPatch[idx[2]],
+			parent->bezPatch[getColumnMajorIdx(idx[2],row)],//parent->bezPatch[idx[2]],
 			2.0*glProjPoint3 - p10,
 			2.0*glProjPoint4 - p11,
 			2.0*glProjPoint5 - p12,
-			p20, //parent->bezPatch[idx[6]],
+			parent->bezPatch[getColumnMajorIdx(idx[6],row)],
 			2.0*glProjPoint7 - p21,
-			p22 //parent->bezPatch[idx[8]]
+			parent->bezPatch[getColumnMajorIdx(idx[8],row)]
 			);
 	}
 
@@ -285,24 +309,30 @@ void BezTreeNode::draw()
 	const LUT& lut = tree.getLUT();
 	glBegin(GL_TRIANGLES);
 
-	//cout << "Print Index" << endl;
-	for (unsigned int i = 0; i < bezPatchIdx.size(); i++)
+	cout << "BezTreeNode::draw() > Print Index and texture coordinates" << endl;
+	for (size_t i = 0; i < bezPatchIdx.size(); i++)
 	{
 		tmpIdx = bezPatchIdx[i];
 		tmpUV = lut.coord[redun+tmpIdx[0]];
-		//cout << tmpIdx[0] << " ";
+		//cout << tmpIdx[0] << " " << tmpUV.x << ',' << tmpUV.y << endl;
 		glTexCoord2f(tmpUV.x, tmpUV.y);
 		glVertex2d(bezPatch[tmpIdx[0]].x, bezPatch[tmpIdx[0]].y);
 		
 		tmpUV = lut.coord[redun + tmpIdx[1]];
-		//cout << tmpIdx[1] << " ";
+		//cout << tmpIdx[1] << " " << tmpUV.x << ',' << tmpUV.y << endl;
 		glTexCoord2f(tmpUV.x, tmpUV.y);
 		glVertex2d(bezPatch[tmpIdx[1]].x, bezPatch[tmpIdx[1]].y);
 		
 		tmpUV = lut.coord[redun + tmpIdx[2]];
-		//cout << tmpIdx[2] << endl;
+		//cout << tmpIdx[2] << " " << tmpUV.x << ',' << tmpUV.y << endl;
 		glTexCoord2f(tmpUV.x, tmpUV.y);
 		glVertex2d(bezPatch[tmpIdx[2]].x, bezPatch[tmpIdx[2]].y);
+
+		// normal direction test
+		/*Vector2f l1(bezPatch[tmpIdx[1]].x - bezPatch[tmpIdx[0]].x, bezPatch[tmpIdx[1]].y - bezPatch[tmpIdx[0]].y);
+		Vector2f l2(bezPatch[tmpIdx[2]].x - bezPatch[tmpIdx[0]].x, bezPatch[tmpIdx[2]].y - bezPatch[tmpIdx[0]].y);
+		Vector3f xl1l2(0.f, 0.f, l1.x*l2.y - l1.y*l2.x);
+		cout << "Normal direction: " << xl1l2.z << endl;*/
 	}
 	glEnd();
 }
@@ -321,6 +351,9 @@ void BezTreeNode::subdivide()
 		// clock wise order
 		int id0[9], id1[9], id2[9], id3[9];
 		// child[0]
+		int i, j, row;
+		const vector<Point2f>& proj = tree.getProjPoints();
+		row = proj.size();
 		id0[0] = idx[0];
 		id0[2] = idx[1];
 		id0[6] = idx[3];

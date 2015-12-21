@@ -20,8 +20,9 @@ public:
 
 	// opengl functions
 	void initTexWindow();
+	void resizeTexWindow(int width, int height);
 	
-	static int gridX, gridY, rtX, rtY;
+	static int gridX, gridY, rtX, rtY, winX, winY;
 private:
 	static void bezfitDisplay();
 	static void bezfitKeyboard(unsigned char key, int x, int y);

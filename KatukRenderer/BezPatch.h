@@ -10,6 +10,7 @@ class Matrix3f;
 class QuadBezierCurve2f;
 class QuadBezierPatch2f;
 class BezTreeNode;
+class GeoCorrection;
 struct LUT;
 
 using std::vector;
@@ -66,12 +67,13 @@ private:
 	vector<Mat> transformedPoints;
 	vector<Point2f> projPoints;
 	int maxlv;
-	int** setIdx;
+	//int** setIdx;
 	/*vector<QuadBezierPatch2f > surface;
 	vector<vector<Vector2f> > bezPatch;
 	vector<vector<unsigned> > bezPatchIdx;*/
 	LUT tex;
 	BezTreeNode* root;
+	GeoCorrection* geoCorrection;
 
 public:
 	void draw(int lv);
@@ -81,7 +83,7 @@ public:
 	const vector<Point2f>& getProjPoints() const;
 	void updatePoints(vector<Mat>& _trfPts, vector<Point2f>& _projPts);
 	void updateLUT(int lv);
-	BezPatch(const vector<Mat>& _trfPts, const vector<Point2f>& _projPts, int _lv);
+	BezPatch(const vector<Mat>& _trfPts, const vector<Point2f>& _projPts, int _lv, GeoCorrection* _geoc);
 	LUT& getLUT();
 	int getMaxLevel() const;
 	~BezPatch();
@@ -114,6 +116,11 @@ public:
 	vector<Vector2f> bezPatch;
 	vector<vector<unsigned> > bezPatchIdx;
 };
+
+inline int getColumnMajorIdx(int idx, int row)
+{
+	return (idx%row)*row + static_cast<int>(idx / row);
+}
 
 inline Vector2f operator-(const Point2f lhs, const Vector2f rhs)
 {

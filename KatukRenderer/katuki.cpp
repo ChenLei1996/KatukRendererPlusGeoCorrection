@@ -118,7 +118,7 @@ void keyboard(unsigned char key, int x, int y)
 			geoCorrection = new GeoCorrection(*scene->plight->texture, passToCV, max_subdiv_lv);
 			// temporary test code, plug saved image for geometric correction
 			//cv::Mat image = cv::imread("rendering-checker-lv2.jpg", cv::IMREAD_COLOR);
-			//geoCorrection = new GeoCorrection(*scene->plight->texture, image);
+			//geoCorrection = new GeoCorrection(*scene->plight->texture, image, max_subdiv_lv);
 			// temporary test code end
 			geoCorrection->runCorrection(curBezLv);
 			geoCorrection->initTexWindow();

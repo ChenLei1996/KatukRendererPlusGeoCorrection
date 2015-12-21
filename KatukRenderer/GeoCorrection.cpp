@@ -19,7 +19,10 @@ int GeoCorrection::gridX;
 int GeoCorrection::gridY;
 int GeoCorrection::rtX;
 int GeoCorrection::rtY;
+int GeoCorrection::winX;
+int GeoCorrection::winY;
 extern cv::Mat passedFromCv;
+GLint windowHnd;
 
 //QuadBezierPatch2f surface;
 //const Matrix3f BernCoff(1.0, -2.0, 1.0, 0.0, 2.0, -2.0, 0.0, 0.0, 1.0);
@@ -83,6 +86,12 @@ void GeoCorrection::runCorrection(int level)
 	cout << "Detected points in camera: " << rtDetects.size() << endl
 		<< "Detected points in projection: " << gridDetects.size() << endl;
 
+	for (vector<Point2f>::size_type i = 0; i < rtDetects.size(); ++i)
+		cout << "RT points: " << rtDetects[i].x << "," << rtDetects[i].y << endl;
+
+	for (vector<Point2f>::size_type i = 0; i < gridDetects.size(); ++i)
+		cout << "Projection points: " << gridDetects[i].x << "," << gridDetects[i].y << endl;
+
 	// find homography
 	int row = static_cast<int>(sqrt(rtDetects.size()));
 	vector<cv::Point2f> projcorners;
@@ -115,22 +124,11 @@ void GeoCorrection::runCorrection(int level)
 		toProjector.push_back(tmp);
 	}
 
-	/*steps = row - 1;
-	if (BernsVal.size() == 0)
-		genBernsVal(BernsVal, BernCoff, steps);
-	if (quadBezTree)
-	{
-		cout << "Delete quadBezTree and initialize new quadBezTree" << endl;
-		delete quadBezTree;
-
-	}
-	quadBezTree = new BezTree(toProjector, gridDetects, subdivLv);*/
-
 	// subdivLv == max subdivison level
 	if (bezPatch == nullptr)
 	{
 		cout << "GeoCorrection::runCorrection() > create new BezPatch()" << endl;
-		bezPatch = new BezPatch(toProjector, gridDetects, subdivLv);
+		bezPatch = new BezPatch(toProjector, gridDetects, subdivLv, this);
 	}
 	else
 	{
@@ -141,8 +139,15 @@ void GeoCorrection::runCorrection(int level)
 		// subdivide bezPatch
 		bezPatch->subdivide();
 
+		// resize window
+		/*cv::Size2f mins, maxs;
+		bezPatch->getMinMax(level, mins, maxs);
+		winX = static_cast<int>(maxs.width - mins.width);
+		winY = static_cast<int>(maxs.height - mins.height);
+		resizeTexWindow(winX, winY);*/
+
 		// update texture coordinate
-		bezPatch->updateLUT(level);
+		//bezPatch->updateLUT(level);
 	}
 	corrected = true;
 }
@@ -217,7 +222,8 @@ void GeoCorrection::sort(cv::Mat& arr, int level)
 	{
 		int j = i - 1;
 		cv::Point2f target = arr.at<cv::Point2f>(i, 0);
-		while (j >= 0 && target.x < arr.at<cv::Point2f>(j, 0).x)
+		//while (j >= 0 && target.x < arr.at<cv::Point2f>(j, 0).x)
+		while (j >= 0 && target.y > arr.at<cv::Point2f>(j, 0).y)
 		{
 			arr.at<cv::Point2f>(j + 1, 0) = arr.at<cv::Point2f>(j, 0);
 			j--;
@@ -233,7 +239,8 @@ void GeoCorrection::sort(cv::Mat& arr, int level)
 			int lim = row*i;
 			cv::Point2f target = arr.at<cv::Point2f>(k, 0);
 			while ((j >= lim)
-				&& (target.y < arr.at<cv::Point2f>(j, 0).y))
+				//&& (target.y < arr.at<cv::Point2f>(j, 0).y))
+				&& (target.x < arr.at<cv::Point2f>(j, 0).x))
 			{
 				arr.at<cv::Point2f>(j + 1, 0) = arr.at<cv::Point2f>(j, 0);
 				j--;
@@ -246,13 +253,17 @@ void GeoCorrection::sort(cv::Mat& arr, int level)
 void GeoCorrection::initTexWindow()
 {
 	// opengl initialization!
+	/*cv::Size2f mins, maxs;
+	bezPatch->getMinMax(0, mins, maxs);
+	winX = static_cast<int>(maxs.width - mins.width);
+	winY = static_cast<int>(maxs.height - mins.height);*/
 	glutInitWindowSize(gridX, gridY);
-	glutCreateWindow("Bezier patch warping");
+	windowHnd = glutCreateWindow("Bezier patch warping");
 	glutSetOption(GLUT_RENDERING_CONTEXT, GLUT_CREATE_NEW_CONTEXT);
 
 	//glPolygonMode(GL_FRONT, GL_LINE);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glPixelStorei(GL_UNPACK_ROW_LENGTH, grid.step / grid.elemSize());
+	//glPixelStorei(GL_UNPACK_ROW_LENGTH, grid.step / grid.elemSize());
 	glEnable(GL_TEXTURE_2D);
 	glGenTextures(1, &tex);
 	glBindTexture(GL_TEXTURE_2D, tex);
@@ -267,6 +278,12 @@ void GeoCorrection::initTexWindow()
 	glutKeyboardFunc(GeoCorrection::bezfitKeyboard);
 }
 
+void GeoCorrection::resizeTexWindow(int width, int height)
+{
+	cout << "GeoCorrection::resizeTexWindow > width: " << width << " height: " << height << endl;
+	glutReshapeWindow(width, height);
+}
+
 // opengl functions
 void GeoCorrection::bezfitDisplay()
 {
@@ -277,9 +294,9 @@ void GeoCorrection::bezfitDisplay()
 	cv::Size2f mins, maxs;
 	bezPatch->getMinMax(patchDrawLevel, mins, maxs);
 	cout << "quadBezTree::root::getMinMax: " << mins << maxs << endl;
-	
 	glOrtho(mins.width, maxs.width, mins.height, maxs.height, -1, 1);
-	//glOrtho(0, gridX, 0, gridX, -1, 1);
+	
+	//glOrtho(0, gridX,	 0, gridX, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
@@ -298,7 +315,7 @@ void GeoCorrection::bezfitKeyboard(unsigned char key, int x, int y)
 	switch (key)
 	{
 	case 27:
-		exit(0);
+		//exit(0);
 		break;
 
 	case '0':
